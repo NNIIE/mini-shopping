@@ -43,15 +43,16 @@
 ### 상품
 |    METHOD   | URL |  기능                 |
 |----------|--------|----------------------|
-| GET      | /product | 상품 조회            |
+| GET      | /product | 상품 목록 조회        |
+| GET      | /product/{id} | 특정 상품 조회   |
 | POST     | /product | 상품 등록            |
-| PATCH    | /product | 상품 수정            |
-| DELETE   | /product | 상품 삭제            |
+| PATCH    | /product/{id} | 상품 수정       |
+| DELETE   | /product/{id} | 상품 삭제       |
 
-### 주문
+### 검색
 | METHOD       | URL | 기능                  |
 |----------|--------|----------------------|
-| GET      | /order/~~~ | 카테고리 별 최저가 브랜드의 상품가격 및 총액 조회 |
-| POST     | /order/~~~ | 모든상품 최저가 브랜드 상품가격 및 총액 조회 |
-| PATCH    | /order/~~~ | 최저, 최고 가격 브랜드와 상품 가격 조회 |
+| GET      | /search/categories/lowest-prices | 카테고리 별 최저가 브랜드의 상품가격 및 총액 조회 |
+| GET      | /search/brands/best-value | 단일 브랜드로 모든 카테고리 구매시 최저가격 브랜드와 가격, 총액 조회 |
+| GET      | /search/category/{category}/price-range | 카테고리 이름으로 최저, 최고 가격 브랜드와 상품 가격 조회 |
 
