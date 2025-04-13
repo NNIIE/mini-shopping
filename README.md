@@ -17,7 +17,8 @@
 <br>
 
 # 테스트
-- 추후 작성
+- Unit Test
+- Integration Test
 
 <br>
 
@@ -36,6 +37,70 @@
 <br>
 
 # 프로젝트 구조
+요구사항이 복잡하지 않아 최대한 단순하고 파악하기 쉬운 모놀리식 아키텍처 (Controller-Service-Repository) 로 설계했습니다.
+```
+product-service/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/
+│   │   │       └── shopping/
+│   │   │           ├── ShoppingApplication.java
+│   │   │           ├── controller/
+│   │   │           │   ├── SearchController.java
+│   │   │           │   ├── ProductController.java
+│   │   │           ├── service/
+│   │   │           │   ├── SearchService.java
+│   │   │           │   └── ProductService.java
+│   │   │           ├── repository/
+│   │   │           │   ├── SearchRepository.java
+│   │   │           │   ├── SearchRepositoryImpl.java
+│   │   │           │   ├── ProductRepository.java
+│   │   │           ├── model/
+│   │   │           │   └── entity/
+│   │   │           │       ├── BaseEntity.java
+│   │   │           │       ├── Brand.java
+│   │   │           │       └── Product.java
+│   │   │           │   └── domain/
+│   │   │           │       ├── BestBrandProduct.java
+│   │   │           │       ├── BestPriceProduct.java
+│   │   │           │       └── CategoryPriceProduct.java
+│   │   │           │   └── dto/
+│   │   │           │       ├── request/
+│   │   │           │       │   ├── ProductCreateRequest.java
+│   │   │           │       └── └── ProductUpdateRequest.java
+│   │   │           │       ├── response/
+│   │   │           │       │   ├── BestBrandResponse.java
+│   │   │           │       │   ├── LowestProductsResponse.java
+│   │   │           │       └── └── BestPriceResponse.java
+│   │   │           ├── exception/
+│   │   │           │   ├── GlobalExceptionHandler.java
+│   │   │           │   └── GlobalExceptionResponse.java
+│   │   │           ├── config/
+│   │   │           │   ├── DatabaseConfig.java
+│   │   │           │   ├── SwaggerConfig.java
+│   │   │           │   └── WebConfig.java
+│   │   │           └── util/
+│   │   │               └── RegexpConstants.java 
+│   │   └── resources/
+│   │       ├── application.yml
+│   │       ├── data.sql
+│   │       └── schema.sql
+│   └── test/
+│       └── java/
+│           └── com/
+│               └── shopping/
+│                   ├── controller/
+│                   │   ├── SearchControllerTest.java
+│                   │   └── ProductControllerTest.java
+│                   ├── service/
+│                   │   ├── SearchServiceTest.java
+│                   │   └── ProductServiceTest.java
+│                   └── repository/
+│                       ├── SearchRepositoryTest.java
+│                       └── ProductRepositoryTest.java
+└── build.gradle
+```
 
 <br>
 
