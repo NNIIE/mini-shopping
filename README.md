@@ -12,11 +12,11 @@
 <br>
 
 # 실행 방법
-- 추후 작성
+- 
 
 <br>
 
-# 테스트
+# 테스트 방법
 - Unit Test
 - Integration Test
 
