@@ -1,5 +1,7 @@
 # 개발 환경
 
+<br>
+
 ## 목차
 - [Language: Java 21](#language-java-21)
 - [GC: G1 GC](#gc-g1-gc)
@@ -9,6 +11,10 @@
 - [동적 쿼리 기술: QueryDSL](#동적-쿼리-기술-querydsl)
 - [테스트: JUnit 5 + Mockito](#테스트-junit-5--mockito)
 - [Build Tool: Gradle](#build-tool-gradle)
+
+---
+
+<br>
 
 ### Language: Java 21
 최신 버전이기 때문에 일부 레거시 라이브러리(예: 바이트코드 조작 라이브러리, 구형 ORM 등) 와의 호환성 이슈가 존재할 수 있으나 신규 프로젝트 이고 Spring, Hibernate, Gradle 등 주요 프레임워크 및 라이브러리와는 완전한 호환성을 제공하며 더욱 향상된 G1 GC 기능을 사용하고자 JDK 21로 선택했습니다.
