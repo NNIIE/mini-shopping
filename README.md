@@ -243,6 +243,177 @@ product-service/
 <br>
 
 # API
+## 상품
+### 브랜드 별 상품 목록 조회
+#### URL
+```
+GET <baseEndPoint/>product/brand/{brandId}
+```
+
+#### 요청 헤더
+```
+Accept: application/json
+```
+
+#### Request Parameter
+| 이름      | 타입      | 설명        | 필수 |
+|----------|----------|------------|-----|
+| brandId | Long    | 브랜드 ID    | O  |
+
+#### Response
+| 이름      | 타입      | 설명        |
+|----------|----------|------------|
+| id       | Long     | 상품 ID     |
+| brandId  | Long     | 브랜드 ID    |
+| category | String   | 상품 카테고리  |
+| price    | Double   | 상품 가격     |
+
+#### 예제
+##### 요청
+```
+GET <baseEndPoint>/product/brand/1
+```
+
+##### 응답
+``` json
+[
+  {
+    "id": 1,
+    "brandId": 1,
+    "category": "SNEAKERS",
+    "price": 120000
+  },
+  {
+    "id": 3,
+    "brandId": 2,
+    "category": "HAT",
+    "price": 35000
+  }
+]
+```
+
+------------------------------------
+
+### 상품 등록
+#### URL
+```
+POST <baseEndPoint/>product
+```
+
+#### 요청 헤더
+```
+Accept: application/json
+```
+
+#### Request Parameter
+| 이름      | 타입      | 설명        | 필수 |
+|----------|----------|------------|-----|
+| brandId  | Long     | 브랜드 ID    | O  |
+| category | String   | 상품 카테고리  | O  |
+| price    | Double   | 상품 가격     | O  |
+
+
+#### Response
+- 상태코드: 201 Created
+- 응답 본문: 없음
+
+#### 예제
+##### 요청
+```
+POST <baseEndPoint>/product/brand
+
+{
+  "brandId": 1,
+  "category": "SNEAKERS",
+  "price": 120000
+}
+```
+
+------------------------------------
+
+### 상품 수정
+#### URL
+```
+PATCH <baseEndPoint/>product/{id}
+```
+
+#### 요청 헤더
+```
+Accept: application/json
+```
+
+#### Request Parameter
+| 이름      | 타입      | 설명        | 필수 |
+|----------|----------|------------|-----|
+| id       | Long     | 상품 ID     | O   |
+| price    | Double   | 상품 가격     | O  |
+
+
+#### Response
+- 상태코드: 200 OK
+- 응답 본문: 없음
+
+#### 예제
+##### 요청
+```
+PATCH <baseEndPoint>/product/1
+
+{
+  "price": 120000
+}
+```
+
+------------------------------------
+
+### 상품 삭제
+#### URL
+```
+DELETE <baseEndPoint/>product/{id}
+```
+
+#### 요청 헤더
+```
+Accept: application/json
+```
+
+#### Request Parameter
+| 이름      | 타입      | 설명        | 필수 |
+|----------|----------|------------|-----|
+| id       | Long     | 상품 ID     | O   |
+
+
+#### Response
+- 상태코드: 204 No Content
+- 응답 본문: 없음
+
+#### 예제
+##### 요청
+```
+DELETE <baseEndPoint>/product/1
+```
+
+------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# API
 ### 상품
 |    METHOD   | URL |  기능                 |
 |----------|--------|----------------------|
