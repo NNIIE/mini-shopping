@@ -80,7 +80,11 @@ GET <baseEndPoint>/product/brand/1?page=0&size=10&sort=price,asc
 }
 ```
 
+<br>
+
 ------------------------------------
+
+<br>
 
 ### 상품 등록
 #### URL
@@ -118,7 +122,11 @@ POST <baseEndPoint>/product
 }
 ```
 
+<br>
+
 ------------------------------------
+
+<br>
 
 ### 상품 수정
 #### URL
@@ -153,7 +161,11 @@ PATCH <baseEndPoint>/product/1
 }
 ```
 
+<br>
+
 ------------------------------------
+
+<br>
 
 ### 상품 삭제
 #### URL
@@ -182,7 +194,11 @@ Accept: application/json
 DELETE <baseEndPoint>/product/1
 ```
 
+<br>
+
 ------------------------------------
+
+<br>
 
 ## 검색
 ### 카테고리별 최저가 브랜드 상품 조회
@@ -238,7 +254,11 @@ GET <baseEndPoint>/search/categories/lowest-prices
 }
 ```
 
+<br>
+
 ------------------------------------
+
+<br>
 
 ### 단일 브랜드로 모든 카테고리 구매시 최저가격 브랜드와 가격, 총액 조회
 #### URL
@@ -291,7 +311,11 @@ GET <baseEndPoint>/search/brands/best-value
 }
 ```
 
+<br>
+
 ------------------------------------
+
+<br>
 
 ### 카테고리 이름으로 최저, 최고 가격 브랜드와 상품 가격 조회
 #### URL
