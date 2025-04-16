@@ -114,7 +114,8 @@ Content-Type: application/json
 ##### 요청
 ```
 POST <baseEndPoint>/product
-
+```
+```json
 {
   "brandId": 1,
   "category": "SNEAKERS",
@@ -155,7 +156,8 @@ Content-Type: application/json
 ##### 요청
 ```
 PATCH <baseEndPoint>/product/1
-
+```
+```json
 {
   "price": 120000
 }
