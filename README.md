@@ -259,37 +259,51 @@ Accept: application/json
 | 이름      | 타입      | 설명        | 필수 |
 |----------|----------|------------|-----|
 | brandId | Long    | 브랜드 ID    | O  |
+| page | Integer    | 페이지 번호    | X (기본값: 0)  |
+| size | Integer    | 페이지당 항목 수    | X (기본값: 20) |
+| sort | Integer    | 정렬 기준     | X (기본값: id, asc) |
 
 #### Response
 | 이름      | 타입      | 설명        |
 |----------|----------|------------|
-| id       | Long     | 상품 ID     |
-| brandId  | Long     | 브랜드 ID    |
-| category | String   | 상품 카테고리  |
-| price    | BigDecimal   | 상품 가격     |
+| elements | List     | 현재 페이지 상품 목록     |
+| elements.id       | Long     | 상품 ID     |
+| elements.brandId  | Long     | 브랜드 ID    |
+| elements.category | String   | 상품 카테고리  |
+| elements.price    | BigDecimal   | 상품 가격     |
+| totalPages    | Integer   | 전체 페이지 수     |
+| totalElements    | Long   | 전체 항목 수    |
+| pageNumber    | Integer   | 현재 페이지 번호     |
+| pageSize    | Integer   | 페이지당 항목 수     |
 
 #### 예제
 ##### 요청
 ```
-GET <baseEndPoint>/product/brand/1
+GET <baseEndPoint>/product/brand/1?page=0&size=10&sort=price,asc
 ```
 
 ##### 응답
 ``` json
-[
-  {
-    "id": 1,
-    "brandId": 1,
-    "category": "SNEAKERS",
-    "price": 120000
-  },
-  {
-    "id": 3,
-    "brandId": 2,
-    "category": "HAT",
-    "price": 35000
-  }
-]
+{
+  "elements": [
+    {
+      "id": 1,
+      "brandId": 1,
+      "category": "SNEAKERS",
+      "price": 120000
+    },
+    {
+      "id": 3,
+      "brandId": 1,
+      "category": "HAT",
+      "price": 35000
+    }
+  ],
+  "totalPages": 3,
+  "totalElements": 24,
+  "pageNumber": 0,
+  "pageSize": 10
+}
 ```
 
 ------------------------------------
@@ -303,6 +317,7 @@ POST <baseEndPoint>/product
 #### 요청 헤더
 ```
 Accept: application/json
+Content-Type: application/json
 ```
 
 #### Request Parameter
@@ -320,7 +335,7 @@ Accept: application/json
 #### 예제
 ##### 요청
 ```
-POST <baseEndPoint>/product/brand
+POST <baseEndPoint>/product
 
 {
   "brandId": 1,
@@ -335,6 +350,7 @@ POST <baseEndPoint>/product/brand
 #### URL
 ```
 PATCH <baseEndPoint>/product/{id}
+Content-Type: application/json
 ```
 
 #### 요청 헤더
@@ -407,9 +423,7 @@ Accept: application/json
 ```
 
 #### Request Parameter
-| 이름      | 타입      | 설명        | 필수 |
-|----------|----------|------------|-----|
-|  |     |     |   |
+없음
 
 #### Response
 | 이름      | 타입      | 설명        |
@@ -464,9 +478,7 @@ Accept: application/json
 ```
 
 #### Request Parameter
-| 이름      | 타입      | 설명        | 필수 |
-|----------|----------|------------|-----|
-|  |     |     |   |
+없음
 
 #### Response
 | 이름      | 타입      | 설명        |
@@ -543,7 +555,7 @@ GET <baseEndPoint>/search/category/TOP/price-range
 ##### 응답
 ``` json
 {
-  "category": "SNEAKERS",
+  "category": "TOP",
   "lowestProduct": {
     "brandId": 1,
     "price": 90000
@@ -554,36 +566,4 @@ GET <baseEndPoint>/search/category/TOP/price-range
   }
 }
 ```
-
-------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# API
-### 상품
-|    METHOD   | URL |  기능                 |
-|----------|--------|----------------------|
-| GET      | /product | 상품 목록 조회        |
-| GET      | /product/{id} | 특정 상품 조회   |
-| POST     | /product | 상품 등록            |
-| PATCH    | /product/{id} | 상품 수정       |
-| DELETE   | /product/{id} | 상품 삭제       |
-
-### 검색
-| METHOD       | URL | 기능                  |
-|----------|--------|----------------------|
-| GET      | /search/categories/lowest-prices | 카테고리 별 최저가 브랜드의 상품가격 및 총액 조회 |
-| GET      | /search/brands/best-value | 단일 브랜드로 모든 카테고리 구매시 최저가격 브랜드와 가격, 총액 조회 |
-| GET      | /search/category/{category}/price-range | 카테고리 이름으로 최저, 최고 가격 브랜드와 상품 가격 조회 |
 
