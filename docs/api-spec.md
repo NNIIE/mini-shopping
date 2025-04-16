@@ -3,12 +3,12 @@
 <br>
 
 ## 목차
-- [상품 API](#상품)
+- [상품](#상품)
   - [브랜드 별 상품 목록 조회](#브랜드-별-상품-목록-조회)
   - [상품 등록](#상품-등록)
   - [상품 수정](#상품-수정)
   - [상품 삭제](#상품-삭제)
-- [검색 API](#검색)
+- [검색](#검색)
   - [카테고리별 최저가 브랜드 상품 조회](#카테고리별-최저가-브랜드-상품-조회)
   - [단일 브랜드로 모든 카테고리 구매시 최저가격 브랜드와 가격, 총액 조회](#단일-브랜드로-모든-카테고리-구매시-최저가격-브랜드와-가격-총액-조회)
   - [카테고리 이름으로 최저, 최고 가격 브랜드와 상품 가격 조회](#카테고리-이름으로-최저-최고-가격-브랜드와-상품-가격-조회)
@@ -17,8 +17,8 @@
 
 <br>
 
-## 상품
-### 브랜드 별 상품 목록 조회
+# 상품
+## 브랜드 별 상품 목록 조회
 #### URL
 ```
 GET <baseEndPoint>/product/brand/{brandId}
@@ -86,7 +86,7 @@ GET <baseEndPoint>/product/brand/1?page=0&size=10&sort=price,asc
 
 <br>
 
-### 상품 등록
+## 상품 등록
 #### URL
 ```
 POST <baseEndPoint>/product
@@ -128,7 +128,7 @@ POST <baseEndPoint>/product
 
 <br>
 
-### 상품 수정
+## 상품 수정
 #### URL
 ```
 PATCH <baseEndPoint>/product/{id}
@@ -167,7 +167,7 @@ PATCH <baseEndPoint>/product/1
 
 <br>
 
-### 상품 삭제
+## 상품 삭제
 #### URL
 ```
 DELETE <baseEndPoint>/product/{id}
@@ -200,8 +200,8 @@ DELETE <baseEndPoint>/product/1
 
 <br>
 
-## 검색
-### 카테고리별 최저가 브랜드 상품 조회
+# 검색
+## 카테고리별 최저가 브랜드 상품 조회
 #### URL
 ```
 GET <baseEndPoint>/search/categories/lowest-prices
@@ -260,7 +260,7 @@ GET <baseEndPoint>/search/categories/lowest-prices
 
 <br>
 
-### 단일 브랜드로 모든 카테고리 구매시 최저가격 브랜드와 가격, 총액 조회
+## 단일 브랜드로 모든 카테고리 구매시 최저가격 브랜드와 가격, 총액 조회
 #### URL
 ```
 GET <baseEndPoint>/search/brands/best-value
@@ -317,7 +317,7 @@ GET <baseEndPoint>/search/brands/best-value
 
 <br>
 
-### 카테고리 이름으로 최저, 최고 가격 브랜드와 상품 가격 조회
+## 카테고리 이름으로 최저, 최고 가격 브랜드와 상품 가격 조회
 #### URL
 ```
 GET <baseEndPoint>/search/category/{category}/price-range
