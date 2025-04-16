@@ -132,12 +132,12 @@ POST <baseEndPoint>/product
 #### URL
 ```
 PATCH <baseEndPoint>/product/{id}
-Content-Type: application/json
 ```
 
 #### 요청 헤더
 ```
 Accept: application/json
+Content-Type: application/json
 ```
 
 #### Request Parameter
