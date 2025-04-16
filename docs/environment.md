@@ -1,4 +1,15 @@
 # 개발 환경
+
+## 목차
+- [Language: Java 21](#language-java-21)
+- [GC: G1 GC](#gc-g1-gc)
+- [Framework: Spring Boot 3.4.4](#framework-spring-boot-344)
+- [Database: MySQL 8.0](#database-mysql-80)
+- [데이터 접근 기술: JPA](#데이터-접근-기술-jpa)
+- [동적 쿼리 기술: QueryDSL](#동적-쿼리-기술-querydsl)
+- [테스트: JUnit 5 + Mockito](#테스트-junit-5--mockito)
+- [Build Tool: Gradle](#build-tool-gradle)
+
 ### Language: Java 21
 최신 버전이기 때문에 일부 레거시 라이브러리(예: 바이트코드 조작 라이브러리, 구형 ORM 등) 와의 호환성 이슈가 존재할 수 있으나 신규 프로젝트 이고 Spring, Hibernate, Gradle 등 주요 프레임워크 및 라이브러리와는 완전한 호환성을 제공하며 더욱 향상된 G1 GC 기능을 사용하고자 JDK 21로 선택했습니다.
 - 최적화된 G1 GC를 통해 예측 가능한 낮은 GC 시간 을 제공하며 안정성과 처리량의 균형을 효과적으로 맞출 수 있습니다.
