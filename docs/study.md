@@ -3,7 +3,6 @@
 - [GC 알고리즘](#gc-알고리즘)
 - [MySQL / PostgreSQL / MariaDB](#MVCC-MySQL--PostgreSQL)
 - [DDD / Hexagonal](#ddd--hexagonal)
-- [Unit Test / Integration Test](#unit-test--integration-test)
 - [Session / Token](#session--token)
 
 
