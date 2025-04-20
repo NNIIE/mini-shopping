@@ -1,7 +1,7 @@
 - [Fork Join Pool](#fork-join-pool)
 - [Virtual Threads](#virtual-threads)
 - [GC 알고리즘](#gc-알고리즘)
-- [MySQL / PostgreSQL / MariaDB](#mysql--postgresql--mariadb)
+- [MySQL / PostgreSQL / MariaDB](#MVCC-MySQL--PostgreSQL)
 - [DDD / Hexagonal](#ddd--hexagonal)
 - [Unit Test / Integration Test](#unit-test--integration-test)
 - [Session / Token](#session--token)
@@ -109,7 +109,26 @@
 <br>
 
 
-# MySQL / PostgreSQL / MariaDB
+# MVCC - MySQL / PostgreSQL
+### MySQL
+- 언두 로그를 사용해 mvcc 구현
+- 퍼지 프로세스를 통해 더이상 필요없는 레코드 버전을 정리
+- 적합 환경
+  - 짧은 트랜잭션과 높은 처리량이 필요할 경우
+  - 저장 공간이 제한적이거나 데이터 크기가 매우 큰 경우
+
+### PostgreSQL
+- 튜플 버전을 레코드 자체 내에 직접 유지. 모든 update/delete 작업은 새로운 튜플 버전을 생성
+- VACCUM 프로세스를 통해 데드 튜플(더이상 어떤 트랜잭션에도 보이지 않는 튜플)을 정리
+- 적합 환경
+  - 복잡한 쿼리와 분석잡업이 많을 경우
+  - 특정 시점의 데이터를 자주 조회해야 하는 경우
+
+| 항목            | MySQL                        | PostgreSQL                                |
+|----------------|-------------------------------|--------------------------------------|
+| 스토리지 공간 vs 쿼리 유연성     | 언두 로그를 별도 관리하여 테이블 크기는 작지만 과거 데이터 쿼리가 복잡   | 모든 버전을 테이블에 저장하여 테이블 크기는 크지만 과거 데이터 쿼리가 용이  |
+| 관리 복잡성        | 언두 로그 정리는 자동화되어 있어 관리가 쉽지만 세부 조정이 제한적             | VACUUM 파라미터를 세밀하게 조정할 수 있지만 관리 복잡성이 증가           | 
+| 장기 트랜잭션    | 장기 트랜잭션은 언두 로그 크기를 급격히 증가시켜 성능 저하 유발 | 장기 트랜잭션은 VACUUM 효율성을 저하시켜 테이블 팽창을 유발 | 
 
 
 <br>
