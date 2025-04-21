@@ -4,76 +4,35 @@
 <br>
 
 # 테스트 방법
-#### 테스트 유형별 실행
-- 모든 단위 테스트: `./gradlew unitTest`
-- 모든 통합 테스트: `./gradlew integrationTest`
-- 프로젝트 전체 테스트: `./gradlew test`
+## Unit Test
+### `./gradlew unitTest`
+- 회원 가입 단위 테스트 (userSignupUnitTest)
+- 회원 정보 변경 단위 테스트 (userUpdateUnitTest)
+- 회원 탈퇴 단위 테스트 (userSignOffUnitTest)
+- 브랜드 등록 단위 테스트 (brandCreateUnitTest)
+- 브랜드 삭제 단위 테스트 (brandDeleteUnitTest)
+- 상품 등록 단위 테스트 (productCreateUnitTest)
+- 상품 변경 단위 테스트 (productUpdateUnitTest)
+- 상품 삭제 단위 테스트 (productDeleteUnitTest)
+- 상품 조회 단위 테스트 (productQueryUnitTest)
+- 카테고리별 최저가 단위 테스트 (categoryLowestPriceUnitTest)
+- 전체 상품 최저가격 단위 테스트 (totalLowestPriceUnitTest)
+- 카테고리별 가격 범위 단위 테스트 (categoryPriceRangeUnitTest)
 
-#### API 별 전체 테스트
-- 회원 관련 모든 테스트: `./gradlew userAllTest`
-- 브랜드 관련 모든 테스트: `./gradlew brandAllTest`
-- 상품 관련 모든 테스트: `./gradlew productAllTest`
-- 분석 관련 모든 테스트: `./gradlew analysisAllTest`
-
-#### 회원 가입
-- 단위 테스트: `./gradlew userSignupUnitTest`
-- 통합 테스트: `./gradlew userSignupIntegrationTest`
-- 모든 테스트: `./gradlew userSignupAllTest`
-
-#### 회원 정보 변경
-- 단위 테스트: `./gradlew userUpdateUnitTest`
-- 통합 테스트: `./gradlew userUpdateIntegrationTest`
-- 모든 테스트: `./gradlew userUpdateAllTest`
-
-#### 회원 탈퇴
-- 단위 테스트: `./gradlew userSignOffUnitTest`
-- 통합 테스트: `./gradlew userSignOffIntegrationTest`
-- 모든 테스트: `./gradlew userSignOffAllTest`
-
-#### 브랜드 등록
-- 단위 테스트: `./gradlew brandCreateUnitTest`
-- 통합 테스트: `./gradlew brandCreateIntegrationTest`
-- 모든 테스트: `./gradlew brandCreateAllTest`
-
-#### 브랜드 삭제
-- 단위 테스트: `./gradlew brandDeleteUnitTest`
-- 통합 테스트: `./gradlew brandDeleteIntegrationTest`
-- 모든 테스트: `./gradlew brandDeleteAllTest`
-
-#### 상품 등록
-- 단위 테스트: `./gradlew productCreateUnitTest`
-- 통합 테스트: `./gradlew productCreateIntegrationTest`
-- 모든 테스트: `./gradlew productCreateAllTest`
-
-#### 상품 변경
-- 단위 테스트: `./gradlew productUpdateUnitTest`
-- 통합 테스트: `./gradlew productUpdateIntegrationTest`
-- 모든 테스트: `./gradlew productUpdateAllTest`
-
-#### 상품 삭제
-- 단위 테스트: `./gradlew productDeleteUnitTest`
-- 통합 테스트: `./gradlew productDeleteIntegrationTest`
-- 모든 테스트: `./gradlew productDeleteAllTest`
-
-#### 상품 조회
-- 단위 테스트: `./gradlew productQueryUnitTest`
-- 통합 테스트: `./gradlew productQueryIntegrationTest`
-- 모든 테스트: `./gradlew productQueryAllTest`
-
-#### 카테고리별 최저가 브랜드/가격/총액 조회
-- 단위 테스트: `./gradlew categoryLowestPriceUnitTest`
-- 통합 테스트: `./gradlew categoryLowestPriceIntegrationTest`
-- 모든 테스트: `./gradlew categoryLowestPriceAllTest`
-
-#### 전체 상품 구매 시 최저가격 브랜드/총액 조회
-- 단위 테스트: `./gradlew totalLowestPriceUnitTest`
-- 통합 테스트: `./gradlew totalLowestPriceIntegrationTest`
-- 모든 테스트: `./gradlew totalLowestPriceAllTest`
-
-#### 카테고리별 최저/최고 브랜드와 상품가격 조회
-- 단위 테스트: `./gradlew categoryPriceRangeUnitTest`
-- 통합 테스트: `./gradlew categoryPriceRangeIntegrationTest`
-- 모든 테스트: `./gradlew categoryPriceRangeAllTest`
+## Integration Test
+### `./gradlew IntTest`
+- 회원 가입 통합 테스트 (userSignupIntegrationTest)
+- 회원 정보 변경 통합 테스트 (userUpdateIntegrationTest)
+- 회원 탈퇴 통합 테스트 (userSignOffIntegrationTest)
+- 브랜드 등록 통합 테스트 (brandCreateIntegrationTest)
+- 브랜드 삭제 통합 테스트 (brandDeleteIntegrationTest)
+- 상품 등록 통합 테스트 (productCreateIntegrationTest)
+- 상품 변경 통합 테스트 (productUpdateIntegrationTest)
+- 상품 삭제 통합 테스트 (productDeleteIntegrationTest)
+- 상품 조회 통합 테스트 (productQueryIntegrationTest)
+- 카테고리별 최저가 통합 테스트 (categoryLowestPriceIntegrationTest)
+- 전체 상품 최저가격 통합 테스트 (totalLowestPriceIntegrationTest)
+- 카테고리별 가격 범위 통합 테스트 (categoryPriceRangeIntegrationTest)
 
 <br>
 
@@ -246,7 +205,6 @@
 - 없는 카테고리 요청 - 400
 - 최저가/최고가 계산 정확성 확인
 - 상품 추가/삭제 후 결과 확인
-
 
 
 
