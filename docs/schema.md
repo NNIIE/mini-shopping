@@ -62,21 +62,21 @@ CREATE TABLE product
 (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY,
     brand_id        INT UNSIGNED          NOT NULL,
+    category_id     SMALLINT UNSIGNED     NOT NULL,
     name            VARCHAR(40)           NOT NULL,
-    category        VARCHAR(20)           NOT NULL,
     price           DECIMAL(10, 2)        NOT NULL,
     created_at      TIMESTAMP             NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP             NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     INDEX idx_brand (brand_id),
-    INDEX idx_category (category),
+    INDEX idx_category (category_id),
     INDEX idx_price (price)
 );
 
 -- id: 상품 수는 매우 많아질 수 있기 때문에 확장성을 고려해 BIGINT 선택
 -- brand_id: 상품이 속하는 브랜드의 id
 -- name: 상품명은 20글자 이하가 요구사항이지만 추후 변경 가능성을 고려해 VARCHAR(40) 선택
--- category: 의미를 알아보기 쉽게 category enum을 문자열로 저장하기 위해 VARCHAR(20) 선택
+-- category: 상품이 속하는 카테고리의 id
 -- price: 정확한 상품가격 계산을 위한 Java BigDecimal에 매핑되는 decimal(10, 2) 선택
 -- created_at: 2038년 이후 사용될 가능성이 낮고 DATETIME 대비 적은 공간을 차지하고 타임존이 자동처리되는 TIMESTAMP 선택
 -- updated_at: 2038년 이후 사용될 가능성이 낮고 DATETIME 대비 적은 공간을 차지하고 타임존이 자동처리되는 TIMESTAMP 선택
@@ -85,3 +85,23 @@ CREATE TABLE product
 -- idx_category: 카테고리 별 검색등에 쓰이기 위해 인덱스 설정
 -- idx_price: 가격 범위 검색에 쓰이기 위해 인덱스 설정
 ```
+
+### 카테고리
+```sql
+CREATE TABLE category
+(
+    id              SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name            VARCHAR(20)                      NOT NULL,
+    created_at      TIMESTAMP                        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP                        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX idx_name (name)
+);
+
+-- id: 카테고리 수로 TINYINT와 INT 사이의 65000개면 충분하다고 판단해 SMALLINT 선택
+-- name: 카테고리 이름으로 최대 20자면 충분하다고 판단해 VARCHAR(20) 선택
+-- created_at: 2038년 이후 사용될 가능성이 낮고 DATETIME 대비 적은 공간을 차지하고 타임존이 자동처리되는 TIMESTAMP 선택
+-- updated_at: 2038년 이후 사용될 가능성이 낮고 DATETIME 대비 적은 공간을 차지하고 타임존이 자동처리되는 TIMESTAMP 선택
+
+-- idx_name: 카테고리명의 유일조건을 만족하기위해 유니크인덱스 설정
+```
+
