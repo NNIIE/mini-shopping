@@ -1,10 +1,10 @@
 - [Fork Join Pool](#fork-join-pool)
 - [Virtual Threads](#virtual-threads)
 - [GC 알고리즘](#gc-알고리즘)
-- [MySQL / PostgreSQL / MariaDB](#MVCC-MySQL--PostgreSQL)
+- [MVCC (MySQL / PostgreSQL)](#mvcc-mysql--postgresql)
 - [DDD / Hexagonal](#ddd--hexagonal)
-- [Index]()
-- [정규화]()
+- [Index (MySQL / PostgreSQL)](#index-mysql--postgresql)
+- [정규화](#정규화)
 - [Session / Token](#session--token)
 
 
@@ -222,6 +222,12 @@
 ### 카티덜리티 원칙
 - 카디널리티가 인덱스 효율성의 핵심
 - pk, 이메일, 주민등록번호 등의 많은 고유값을 가질수록 높은 카디널리티
+
+<br>
+
+
+# 정규화
+
 
 <br>
 
