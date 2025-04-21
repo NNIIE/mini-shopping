@@ -1,10 +1,16 @@
+## ERD
+
+![스크린샷 2025-04-22 오전 7 25 27](https://github.com/user-attachments/assets/9b991abb-842c-44a9-a825-9ec50583c4e4)
+
+<br>
+
 ### 회원
 ```sql
 CREATE TABLE user
 (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     nickname        VARCHAR(20)                 NOT NULL,
-    email           VARCHAR(254)                NOT NULL,
+    email           VARCHAR(255)                NOT NULL,
     password        VARCHAR(128)                NOT NULL,
     role            VARCHAR(20)                 NOT NULL,
     status          VARCHAR(20)                 NOT NULL,
