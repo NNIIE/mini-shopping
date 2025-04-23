@@ -15,4 +15,9 @@ public class BcryptEncoderService implements PasswordEncoder {
         return bCryptPasswordEncoder.encode(password);
     }
 
+    @Override
+    public boolean verifyPassword(final String requestPassword, final String originPassword) {
+        return bCryptPasswordEncoder.matches(requestPassword, originPassword);
+    }
+
 }
