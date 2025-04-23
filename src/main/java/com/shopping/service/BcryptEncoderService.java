@@ -11,7 +11,7 @@ public class BcryptEncoderService implements PasswordEncoder {
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Override
-    public String encode(String password) {
+    public String encode(final String password) {
         return bCryptPasswordEncoder.encode(password);
     }
 

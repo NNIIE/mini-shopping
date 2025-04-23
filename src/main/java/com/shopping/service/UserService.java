@@ -25,7 +25,7 @@ public class UserService {
             request.getNickname(),
             request.getEmail(),
             passwordEncoder.encode(request.getPassword()),
-            request.getUserRole()
+            request.getRole()
         );
 
         userRepository.save(signUpUser);

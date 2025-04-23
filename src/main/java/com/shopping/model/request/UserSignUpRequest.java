@@ -30,6 +30,6 @@ public class UserSignUpRequest {
     private String password;
 
     @NotNull
-    private UserRole userRole;
+    private UserRole role;
 
 }
