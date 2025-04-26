@@ -15,6 +15,8 @@ CREATE TABLE account
     status          VARCHAR(20)                     NOT NULL,
     created_at      TIMESTAMP                       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP                       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE INDEX idx_email (email)
 );
 ```
 
@@ -44,9 +46,7 @@ CREATE TABLE admin_user
     id                INT UNSIGNED AUTO_INCREMENT     PRIMARY KEY,
     account_id        INT UNSIGNED                    NOT NULL,
     created_at        TIMESTAMP                       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at        TIMESTAMP                       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-    UNIQUE INDEX idx_employee_number (employee_number)
+    updated_at        TIMESTAMP                       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
 
@@ -89,13 +89,13 @@ CREATE TABLE category
 ``` sql
 CREATE TABLE product
 (
-    id              BIGINT AUTO_INCREMENT     PRIMARY KEY,
-    brand_id        INT UNSIGNED              NOT NULL,
-    category_id     INT UNSIGNED              NOT NULL,
-    name            VARCHAR(40)               NOT NULL,
-    price           DECIMAL(10, 2)            NOT NULL,
-    created_at      TIMESTAMP                 NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP                 NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    id              BIGINT UNSIGNEDAUTO_INCREMENT     PRIMARY KEY,
+    brand_id        INT UNSIGNED                      NOT NULL,
+    category_id     INT UNSIGNED                      NOT NULL,
+    name            VARCHAR(40)                       NOT NULL,
+    price           DECIMAL(10, 2)                    NOT NULL,
+    created_at      TIMESTAMP                         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP                         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
 
@@ -109,7 +109,7 @@ CREATE TABLE orders
     basic_user_id   INT UNSIGNED                       NOT NULL,
     status          VARCHAR(20)                        NOT NULL,
     created_at      TIMESTAMP                          NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP                          NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP                          NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
 
@@ -124,7 +124,7 @@ CREATE TABLE order_product
     product_id      BIGINT UNSIGNED                      NOT NULL,
     quantity        INT UNSIGNED                         NOT NULL,
     created_at      TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
 
