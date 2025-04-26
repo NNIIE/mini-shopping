@@ -1,6 +1,7 @@
 ## ERD
 
-![스크린샷 2025-04-22 오전 7 25 27](https://github.com/user-attachments/assets/9b991abb-842c-44a9-a825-9ec50583c4e4)
+![스크린샷 2025-04-27 오전 8 03 42](https://github.com/user-attachments/assets/69e717d7-b6b2-40bf-8177-51c502294f31)
+
 
 <br>
 
@@ -89,13 +90,14 @@ CREATE TABLE category
 ``` sql
 CREATE TABLE product
 (
-    id              BIGINT UNSIGNEDAUTO_INCREMENT     PRIMARY KEY,
-    brand_id        INT UNSIGNED                      NOT NULL,
-    category_id     INT UNSIGNED                      NOT NULL,
-    name            VARCHAR(40)                       NOT NULL,
-    price           DECIMAL(10, 2)                    NOT NULL,
-    created_at      TIMESTAMP                         NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP                         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    id              BIGINT UNSIGNED AUTO_INCREMENT     PRIMARY KEY,
+    brand_id        INT UNSIGNED                       NOT NULL,
+    category_id     INT UNSIGNED                       NOT NULL,
+    name            VARCHAR(40)                        NOT NULL,
+    price           DECIMAL(10, 2)                     NOT NULL,
+    stock           INT UNSIGNED                       NOT NULL,
+    created_at      TIMESTAMP                          NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP                          NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
 
