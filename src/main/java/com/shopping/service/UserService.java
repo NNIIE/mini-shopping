@@ -20,8 +20,9 @@ public class UserService {
 
     @Transactional
     public UserSignUpResponse userSignUp(final UserSignUpRequest request) {
-        userRepository.findByNickname(request.getNickname())
-            .ifPresent(user -> { throw new ConflictException(ErrorCode.NICKNAME_CONFLICT); });
+        userRepository.findByNickname(request.getNickname()).ifPresent(user -> {
+            throw new ConflictException(ErrorCode.NICKNAME_CONFLICT);
+        });
 
         final Account createAccount = accountService.createUserAccount(request.getEmail(), request.getPassword());
         final User signUpUser = createUser(request, createAccount);

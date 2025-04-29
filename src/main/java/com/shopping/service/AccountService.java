@@ -46,8 +46,9 @@ public class AccountService {
     }
 
     private void validateEmail(final String email) {
-        accountRepository.findByEmail(email)
-            .ifPresent(account -> { throw new ConflictException(ErrorCode.EMAIL_CONFLICT); });
+        accountRepository.findByEmail(email).ifPresent(account -> {
+            throw new ConflictException(ErrorCode.EMAIL_CONFLICT);
+        });
     }
 
 }
