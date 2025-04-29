@@ -1,15 +1,15 @@
 package com.shopping.unit.service;
 
-import com.shopping.exception.ApiException;
-import com.shopping.exception.ErrorCode;
 import com.shopping.fixture.UserFixture;
-import com.shopping.model.UserRole;
-import com.shopping.model.UserStatus;
-import com.shopping.model.entity.User;
-import com.shopping.model.request.UserSignUpRequest;
-import com.shopping.repository.UserRepository;
-import com.shopping.service.PasswordEncoder;
+import com.shopping.global.exception.ConflictException;
+import com.shopping.global.exception.ErrorCode;
+import com.shopping.service.AccountService;
 import com.shopping.service.UserService;
+import com.shopping.storage.entity.Account;
+import com.shopping.storage.entity.User;
+import com.shopping.storage.repository.UserRepository;
+import com.shopping.web.request.UserSignUpRequest;
+import com.shopping.web.response.UserSignUpResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -19,8 +19,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.*;
 
@@ -29,68 +31,71 @@ import static org.mockito.Mockito.*;
 class UserServiceSignUpUnitTest {
 
     @InjectMocks
-    private UserService userService;
+    private UserService UserService;
+
+    @Mock
+    private AccountService accountService;
 
     @Mock
     private UserRepository userRepository;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
 
     @Test
     @DisplayName("회원 가입 - 성공")
-    void signUpSuccess() {
+    void userSignUpSuccess() {
         // Given
-        UserSignUpRequest signUpRequest = UserFixture.createSignUpRequest();
-        when(userRepository.existsByEmail(signUpRequest.getEmail())).thenReturn(false);
-        when(userRepository.existsByNickname(signUpRequest.getNickname())).thenReturn(false);
+        UserSignUpRequest request = UserFixture.createRequestForUserSignUp();
+        Account account = UserFixture.createUserAccount();
+        User user = UserFixture.createUser(account);
+        when(userRepository.findByNickname(request.getNickname())).thenReturn(Optional.empty());
+        when(accountService.createUserAccount(request.getEmail(), request.getPassword())).thenReturn(account);
+        when(userRepository.save(any(User.class))).thenReturn(user);
 
         // When
-        userService.signUp(signUpRequest);
+        UserSignUpResponse response = UserService.userSignUp(request);
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepository, times(1)).save(userCaptor.capture());
         User savedUser = userCaptor.getValue();
 
         // Then
         assertAll(
-            () -> assertThat(savedUser.getEmail()).isEqualTo(signUpRequest.getEmail()),
-            () -> assertThat(savedUser.getNickname()).isEqualTo(signUpRequest.getNickname()),
-            () -> assertThat(savedUser.getPassword()).isEqualTo(passwordEncoder.encode(signUpRequest.getPassword())),
-            () -> assertThat(savedUser.getRole()).isEqualTo(UserRole.BASIC),
-            () -> assertThat(savedUser.getStatus()).isEqualTo(UserStatus.ACTIVE)
+            () -> assertThat(response).isNotNull(),
+            () -> assertThat(response.email()).isEqualTo(request.getEmail()),
+            () -> assertThat(response.nickname()).isEqualTo(request.getNickname()),
+            () -> assertThat(savedUser.getNickname()).isEqualTo(request.getNickname()),
+            () -> assertThat(savedUser.getPhoneNumber()).isEqualTo(request.getPhoneNumber()),
+            () -> assertThat(savedUser.getAccount()).isEqualTo(account)
         );
-
     }
 
     @Test
     @DisplayName("회원 가입 - 중복 이메일")
-    void signUpExistsEmail() {
+    void userSignUpExistsEmail() {
         // Given
-        UserSignUpRequest signUpRequest = UserFixture.createSignUpRequest();
-        when(userRepository.existsByEmail(signUpRequest.getEmail())).thenReturn(true);
+        UserSignUpRequest request = UserFixture.createRequestForUserSignUp();
+        when(accountService.createUserAccount(request.getEmail(), request.getPassword()))
+            .thenThrow(new ConflictException(ErrorCode.EMAIL_CONFLICT));
 
         // When & Then
-        assertThatThrownBy(() -> userService.signUp(signUpRequest))
-            .isInstanceOf(ApiException.class)
+        assertThatThrownBy(() -> UserService.userSignUp(request))
+            .isInstanceOf(ConflictException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.EMAIL_CONFLICT);
-
     }
 
     @Test
     @DisplayName("회원 가입 - 중복 닉네임")
-    void signUpExistsNickname() {
+    void userSignUpExistsNickname() {
         // Given
-        UserSignUpRequest signUpRequest = UserFixture.createSignUpRequest();
-        when(userRepository.existsByNickname(signUpRequest.getNickname())).thenReturn(true);
+        UserSignUpRequest request = UserFixture.createRequestForUserSignUp();
+        when(accountService.createUserAccount(request.getEmail(), request.getPassword()))
+            .thenThrow(new ConflictException(ErrorCode.NICKNAME_CONFLICT));
 
         // When & Then
-        assertThatThrownBy(() -> userService.signUp(signUpRequest))
-            .isInstanceOf(ApiException.class)
+        assertThatThrownBy(() -> UserService.userSignUp(request))
+            .isInstanceOf(ConflictException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.NICKNAME_CONFLICT);
-
     }
 
 }

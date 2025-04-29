@@ -1,10 +1,12 @@
 package com.shopping.service;
 
-import com.shopping.exception.ApiException;
-import com.shopping.exception.ErrorCode;
-import com.shopping.model.entity.User;
-import com.shopping.model.request.UserSignUpRequest;
-import com.shopping.repository.UserRepository;
+import com.shopping.global.exception.ConflictException;
+import com.shopping.global.exception.ErrorCode;
+import com.shopping.storage.entity.Account;
+import com.shopping.storage.entity.User;
+import com.shopping.storage.repository.UserRepository;
+import com.shopping.web.request.UserSignUpRequest;
+import com.shopping.web.response.UserSignUpResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,34 +15,32 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
 
+    private final AccountService accountService;
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public void signUp(final UserSignUpRequest request) {
-        existsByEmail(request.getEmail());
-        existsByNickname(request.getNickname());
+    public UserSignUpResponse userSignUp(final UserSignUpRequest request) {
+        userRepository.findByNickname(request.getNickname())
+            .ifPresent(user -> { throw new ConflictException(ErrorCode.NICKNAME_CONFLICT); });
 
-        final User signUpUser = User.createSignUpUser(
-            request.getNickname(),
-            request.getEmail(),
-            passwordEncoder.encode(request.getPassword()),
-            request.getRole()
+        final Account createAccount = accountService.createUserAccount(request.getEmail(), request.getPassword());
+        final User signUpUser = createUser(request, createAccount);
+
+        return new UserSignUpResponse(
+            signUpUser.getId(),
+            signUpUser.getAccount().getEmail(),
+            signUpUser.getNickname()
         );
-
-        userRepository.save(signUpUser);
     }
 
-    private void existsByEmail(final String email) {
-        if (userRepository.existsByEmail(email)) {
-            throw new ApiException(ErrorCode.EMAIL_CONFLICT);
-        }
-    }
+    private User createUser(final UserSignUpRequest request, final Account savedAccount) {
+        final User signUpUser = User.builder()
+            .account(savedAccount)
+            .nickname(request.getNickname())
+            .phoneNumber(request.getPhoneNumber())
+            .build();
 
-    private void existsByNickname(final String nickname) {
-        if (userRepository.existsByNickname(nickname)) {
-            throw new ApiException(ErrorCode.NICKNAME_CONFLICT);
-        }
+        return userRepository.save(signUpUser);
     }
 
 }

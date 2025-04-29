@@ -6,10 +6,10 @@ import com.shopping.global.exception.ErrorCode;
 import com.shopping.global.exception.NotFoundException;
 import com.shopping.service.PasswordEncoder;
 import com.shopping.storage.entity.Account;
-import com.shopping.storage.entity.User;
+import com.shopping.storage.entity.Admin;
 import com.shopping.storage.repository.AccountRepository;
-import com.shopping.storage.repository.UserRepository;
-import com.shopping.web.request.UserSignUpRequest;
+import com.shopping.storage.repository.AdminRepository;
+import com.shopping.web.request.AdminSignUpRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @DirtiesContext
 @Transactional
-class UserSignUpIntegrationTest {
+public class AdminSignUpIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -42,7 +42,7 @@ class UserSignUpIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private UserRepository userRepository;
+    private AdminRepository adminRepository;
 
     @Autowired
     private AccountRepository accountRepository;
@@ -51,14 +51,14 @@ class UserSignUpIntegrationTest {
     private PasswordEncoder passwordEncoder;
 
     @Test
-    @DisplayName("회원가입 성공 - 201 Created 응답")
+    @DisplayName("관리자 등록 성공 - 201 Created 응답")
     void signUp_201Created() throws Exception {
         // given
-        UserSignUpRequest request = UserFixture.createRequestForUserSignUp();
+        AdminSignUpRequest request = UserFixture.createRequestForAdminSignUp();
 
         // when
         ResultActions result = mockMvc.perform(
-            post("/user")
+            post("/admin")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
         );
@@ -66,7 +66,7 @@ class UserSignUpIntegrationTest {
         Account savedAccount = accountRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
 
-        User savedUser = userRepository.findById(savedAccount.getId())
+        Admin savedAdmin = adminRepository.findById(savedAccount.getId())
             .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
 
         // then
@@ -74,63 +74,33 @@ class UserSignUpIntegrationTest {
             .andExpect(status().isCreated());
 
         assertAll(
-            () -> assertThat(savedAccount).isEqualTo(savedUser.getAccount()),
-            () -> assertThat(savedUser.getNickname()).isEqualTo(request.getNickname()),
+            () -> assertThat(savedAccount).isEqualTo(savedAdmin.getAccount()),
             () -> assertThat(passwordEncoder.verifyPassword(request.getPassword(), savedAccount.getPassword())).isTrue()
         );
     }
 
     @Test
-    @DisplayName("회원가입 실패 - 중복된 이메일")
+    @DisplayName("관리자 등록 실패 - 중복된 이메일")
     void signUp_ExistEmail() throws Exception {
         // given
-        UserSignUpRequest request = UserFixture.createRequestForUserSignUp();
-        UserSignUpRequest requestExistEmail = UserFixture.createRequestForUserSignUpParameter(
-            "usertest@email.com",
-            "testUserA",
-            "Qwer1234!!",
-            "010-1234-5678"
+        AdminSignUpRequest request = UserFixture.createRequestForAdminSignUp();
+        AdminSignUpRequest signUpRequestExistEmail = UserFixture.createRequestForAdminSignUpParameter(
+            "admintest@email.com",
+            "Qwer1234!!"
         );
 
         // when
         mockMvc.perform(
-            post("/user")
+            post("/admin")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
         );
 
         // then
         mockMvc.perform(
-            post("/user")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(requestExistEmail)))
-            .andExpect(status().isConflict());
-    }
-
-    @Test
-    @DisplayName("회원가입 실패 - 중복된 닉네임")
-    void signUp_ExistNickname() throws Exception {
-        // given
-        UserSignUpRequest request = UserFixture.createRequestForUserSignUp();
-        UserSignUpRequest requestExistNickname = UserFixture.createRequestForUserSignUpParameter(
-            "testA@email.com",
-            "testUser",
-            "Qwer1234!!",
-            "010-1234-5678"
-        );
-
-        // when
-        mockMvc.perform(
-            post("/user")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request))
-        );
-
-        // then
-        mockMvc.perform(
-                post("/user")
+                post("/admin")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(requestExistNickname)))
+                    .content(objectMapper.writeValueAsString(signUpRequestExistEmail)))
             .andExpect(status().isConflict());
     }
 

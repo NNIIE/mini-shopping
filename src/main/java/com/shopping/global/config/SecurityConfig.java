@@ -1,4 +1,4 @@
-package com.shopping.config;
+package com.shopping.global.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

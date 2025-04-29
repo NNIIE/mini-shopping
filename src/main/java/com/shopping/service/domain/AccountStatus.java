@@ -1,6 +1,6 @@
-package com.shopping.model;
+package com.shopping.service.domain;
 
-public enum UserStatus {
+public enum AccountStatus {
 
     ACTIVE,         // 활성
     INACTIVE,       // 비활성

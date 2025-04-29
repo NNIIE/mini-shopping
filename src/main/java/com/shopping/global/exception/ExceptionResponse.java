@@ -1,4 +1,4 @@
-package com.shopping.exception;
+package com.shopping.global.exception;
 
 public record ExceptionResponse(
     int status,

@@ -1,13 +1,13 @@
-package com.shopping.exception;
+package com.shopping.global.exception;
 
 import lombok.Getter;
 
 @Getter
-public class ApiException extends RuntimeException {
+public abstract class CustomException extends RuntimeException {
 
     private final ErrorCode errorCode;
 
-    public ApiException(ErrorCode errorCode) {
+    protected CustomException(ErrorCode errorCode) {
         super(errorCode.getMessage());
         this.errorCode = errorCode;
     }

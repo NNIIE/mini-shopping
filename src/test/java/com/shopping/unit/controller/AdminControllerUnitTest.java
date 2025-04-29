@@ -3,9 +3,9 @@ package com.shopping.unit.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shopping.fixture.UserFixture;
 import com.shopping.global.config.SecurityConfig;
-import com.shopping.service.UserService;
-import com.shopping.web.controller.UserController;
-import com.shopping.web.request.UserSignUpRequest;
+import com.shopping.service.AdminService;
+import com.shopping.web.controller.AdminController;
+import com.shopping.web.request.AdminSignUpRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -21,9 +21,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Tag("unit")
-@WebMvcTest(UserController.class)
+@WebMvcTest(AdminController.class)
 @Import(SecurityConfig.class)
-class UserControllerUnitTest {
+class AdminControllerUnitTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -32,47 +32,33 @@ class UserControllerUnitTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private UserService UserService;
+    private AdminService adminService;
 
     @Test
-    @DisplayName("회원가입 - 잘못된 이메일 형식")
+    @DisplayName("관리자 등록 - 잘못된 이메일 형식")
     void invalidEmail() throws Exception {
         // Given
-        UserSignUpRequest signUpRequest = UserFixture.createRequestForUserSignUp();
-        ReflectionTestUtils.setField(signUpRequest, "email", "userEmail");
+        AdminSignUpRequest request = UserFixture.createRequestForAdminSignUp();
+        ReflectionTestUtils.setField(request, "email", "adminEmail");
 
         // When & Then
-        mockMvc.perform(post("/user")
+        mockMvc.perform(post("/admin")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(signUpRequest)))
+                .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("회원가입 - 잘못된 닉네임 형식")
-    void invalidNickname() throws Exception {
-        // Given
-        UserSignUpRequest signUpRequest = UserFixture.createRequestForUserSignUp();
-        ReflectionTestUtils.setField(signUpRequest, "nickname", "12341234");
-
-        // When & Then
-        mockMvc.perform(post("/user")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(signUpRequest)))
-            .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("회원가입 - 잘못된 비밀번호 형식")
+    @DisplayName("관리자 등록 - 잘못된 비밀번호 형식")
     void invalidPassword() throws Exception {
         // Given
-        UserSignUpRequest signUpRequest = UserFixture.createRequestForUserSignUp();
-        ReflectionTestUtils.setField(signUpRequest, "password", "12341234");
+        AdminSignUpRequest request = UserFixture.createRequestForAdminSignUp();
+        ReflectionTestUtils.setField(request, "password", "12341234");
 
         // When & Then
-        mockMvc.perform(post("/user")
+        mockMvc.perform(post("/admin")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(signUpRequest)))
+                .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest());
     }
 

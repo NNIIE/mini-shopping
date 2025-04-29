@@ -1,4 +1,4 @@
-package com.shopping.exception;
+package com.shopping.global.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @Slf4j
 @RestControllerAdvice
@@ -31,14 +31,8 @@ public class GlobalExceptionHandler {
             .body(response);
     }
 
-    @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ExceptionResponse> handleApiException(
-        final ApiException ex,
-        final HttpServletRequest request
-    ) {
-        log.warn("Api Exception: {} ({}), URI: {}",
-            ex.getMessage(), ex.getErrorCode(), request.getRequestURI());
-
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<ExceptionResponse> handleCustomException(final CustomException ex) {
         final ExceptionResponse response = new ExceptionResponse(
             ex.getErrorCode().getStatus().value(),
             ex.getErrorCode().name(),
