@@ -1,8 +1,8 @@
 package com.shopping.service;
 
-import com.shopping.storage.entity.Account;
-import com.shopping.storage.entity.Admin;
-import com.shopping.storage.repository.AdminRepository;
+import com.shopping.storage.account.Account;
+import com.shopping.storage.admin.Admin;
+import com.shopping.storage.admin.AdminRepository;
 import com.shopping.web.request.AdminSignUpRequest;
 import com.shopping.web.response.AdminSignUpResponse;
 import lombok.RequiredArgsConstructor;

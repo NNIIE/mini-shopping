@@ -1,6 +1,5 @@
-package com.shopping.storage.repository;
+package com.shopping.storage.user;
 
-import com.shopping.storage.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

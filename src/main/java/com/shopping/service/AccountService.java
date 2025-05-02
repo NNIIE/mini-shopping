@@ -1,11 +1,12 @@
 package com.shopping.service;
 
-import com.shopping.global.exception.ConflictException;
+import com.shopping.global.enums.AccountStatus;
+import com.shopping.global.enums.UserRole;
 import com.shopping.global.exception.ErrorCode;
-import com.shopping.service.domain.AccountStatus;
-import com.shopping.service.domain.UserRole;
-import com.shopping.storage.entity.Account;
-import com.shopping.storage.repository.AccountRepository;
+import com.shopping.global.exception.NotFoundException;
+import com.shopping.storage.account.Account;
+import com.shopping.storage.account.AccountRepository;
+import com.shopping.web.response.AccountFindResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,10 +18,20 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Transactional(readOnly = true)
+    public AccountFindResponse findAccountByEmail(final String email) {
+        return accountRepository.findByEmail(email)
+            .map(account -> new AccountFindResponse(
+                account.getId(),
+                account.getEmail(),
+                account.getRole(),
+                account.getStatus()
+            ))
+            .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
+    }
+
     @Transactional
     public Account createAdminAccount(final String email, final String password) {
-        validateEmail(email);
-
         final Account account = Account.builder()
             .email(email)
             .password(passwordEncoder.encode(password))
@@ -33,8 +44,6 @@ public class AccountService {
 
     @Transactional
     public Account createUserAccount(final String email, final String password) {
-        validateEmail(email);
-
         final Account account = Account.builder()
             .email(email)
             .password(passwordEncoder.encode(password))
@@ -43,12 +52,6 @@ public class AccountService {
             .build();
 
         return accountRepository.save(account);
-    }
-
-    private void validateEmail(final String email) {
-        accountRepository.findByEmail(email).ifPresent(account -> {
-            throw new ConflictException(ErrorCode.EMAIL_CONFLICT);
-        });
     }
 
 }

@@ -1,15 +1,16 @@
-package com.shopping.storage.entity;
+package com.shopping.storage.admin;
 
+import com.shopping.storage.BaseEntity;
+import com.shopping.storage.account.Account;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User extends BaseEntity {
+public class Admin extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,19 +20,8 @@ public class User extends BaseEntity {
     @JoinColumn(name = "account_id")
     private Account account;
 
-    private String nickname;
-
-    private String phoneNumber;
-
-    @Builder
-    public User(
-        final Account account,
-        final String nickname,
-        final String phoneNumber
-    ) {
+    public Admin(final Account account) {
         this.account = account;
-        this.nickname = nickname;
-        this.phoneNumber = phoneNumber;
     }
 
 }

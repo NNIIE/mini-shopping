@@ -1,7 +1,8 @@
-package com.shopping.storage.entity;
+package com.shopping.storage.account;
 
-import com.shopping.service.domain.UserRole;
-import com.shopping.service.domain.AccountStatus;
+import com.shopping.global.enums.UserRole;
+import com.shopping.global.enums.AccountStatus;
+import com.shopping.storage.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;

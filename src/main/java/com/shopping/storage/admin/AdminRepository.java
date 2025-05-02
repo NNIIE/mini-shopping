@@ -1,6 +1,5 @@
-package com.shopping.storage.repository;
+package com.shopping.storage.admin;
 
-import com.shopping.storage.entity.Admin;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AdminRepository extends JpaRepository<Admin, Long> {

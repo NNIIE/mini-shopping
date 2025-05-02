@@ -1,9 +1,9 @@
 package com.shopping.fixture;
 
-import com.shopping.service.domain.AccountStatus;
-import com.shopping.service.domain.UserRole;
-import com.shopping.storage.entity.Account;
-import com.shopping.storage.entity.User;
+import com.shopping.global.enums.AccountStatus;
+import com.shopping.global.enums.UserRole;
+import com.shopping.storage.account.Account;
+import com.shopping.storage.user.User;
 import com.shopping.web.request.AdminSignUpRequest;
 import com.shopping.web.request.UserSignUpRequest;
 import org.springframework.test.util.ReflectionTestUtils;

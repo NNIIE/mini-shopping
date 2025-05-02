@@ -1,4 +1,4 @@
-package com.shopping.service.domain;
+package com.shopping.global.enums;
 
 public enum UserRole {
 

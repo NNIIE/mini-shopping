@@ -2,9 +2,9 @@ package com.shopping.service;
 
 import com.shopping.global.exception.ConflictException;
 import com.shopping.global.exception.ErrorCode;
-import com.shopping.storage.entity.Account;
-import com.shopping.storage.entity.User;
-import com.shopping.storage.repository.UserRepository;
+import com.shopping.storage.account.Account;
+import com.shopping.storage.user.User;
+import com.shopping.storage.user.UserRepository;
 import com.shopping.web.request.UserSignUpRequest;
 import com.shopping.web.response.UserSignUpResponse;
 import lombok.RequiredArgsConstructor;
