@@ -1,4 +1,4 @@
-package com.shopping.config;
+package com.shopping.global.config;
 
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;

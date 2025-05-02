@@ -26,6 +26,8 @@ repositories {												// 라이브러리 원격 저장소
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'com.mysql:mysql-connector-j:8.3.0'						// BOM에서 관리되지만 명확하게 버전 명시
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -40,6 +42,44 @@ testImplementation: 테스트 컴파일 및 실행에만 필요한 라이브러�
 testRuntimeOnly: 테스트 실행시에만 필요한 라이브러리
  */
 
-tasks.named('test') {								// 테스트 태스크 구성
+tasks.withType(Test).configureEach {
+	testLogging {
+		events "passed", "skipped", "failed"
+		exceptionFormat "full"
+		showStandardStreams = true
+	}
+}
+
+// 테스트 태스크 구성
+tasks.named('test') {
 	useJUnitPlatform()
+
+	// 항상 실행되도록 설정 (UP-TO-DATE 무시)
+	outputs.upToDateWhen { false }
+}
+
+// 단위 테스트만 실행하는 태스크
+tasks.register('unitTest', Test) {
+	description = '단위 테스트만 실행합니다.'
+	group = 'verification'
+
+	useJUnitPlatform {
+		includeTags 'unit'
+	}
+
+	// 항상 실행되도록 설정 (UP-TO-DATE 무시)
+	outputs.upToDateWhen { false }
+}
+
+// 통합 테스트만 실행하는 태스크
+tasks.register('integrationTest', Test) {
+	description = '통합 테스트만 실행합니다.'
+	group = 'verification'
+
+	useJUnitPlatform {
+		includeTags 'integration'
+	}
+
+	// 항상 실행되도록 설정 (UP-TO-DATE 무시)
+	outputs.upToDateWhen { false }
 }
