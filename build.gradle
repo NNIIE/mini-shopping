@@ -1,11 +1,8 @@
 plugins {
-	id 'java'												// 자바 프로젝트 기본 빌드
-	id 'org.springframework.boot' version '3.4.4'			// 스프링 부트 빌드
-	id 'io.spring.dependency-management' version '1.1.7'	// 스프링 부트의 BOM 기반으로 라이브러리 호환 버전 자동 관리
+	id 'java-library'													// api() 의존성 선언 기능 (의존하는 다른 모듈에도 전이)
+	id 'org.springframework.boot' version '3.4.4' apply(false)			// 스프링 부트 빌드, apply(false) 설정으로 하위 모듈에서만 사용
+	id 'io.spring.dependency-management' version '1.1.7' apply(false)	// 스프링 부트의 BOM 기반으로 라이브러리 호환 버전 자동 관리, apply(false) 설정으로 하위 모듈에서만 사용
 }
-
-group = 'com.shopping'
-version = '0.0.1-SNAPSHOT'
 
 java {
 	toolchain {
@@ -23,63 +20,88 @@ repositories {												// 라이브러리 원격 저장소
 	mavenCentral()
 }
 
-dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'com.mysql:mysql-connector-j:8.3.0'						// BOM에서 관리되지만 명확하게 버전 명시
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-/*
-implementation: 컴파일과 런타임 모두에 필요
-compileOnly: 컴파일 시에만 필요
-annotationProcessor: 컴파일 시점에 어노테이션을 처리하는 프로세서
-testImplementation: 테스트 컴파일 및 실행에만 필요한 라이브러리
-testRuntimeOnly: 테스트 실행시에만 필요한 라이브러리
- */
+subprojects {
+	group = 'com.shopping'
+	version = '0.0.1-SNAPSHOT'
 
-tasks.withType(Test).configureEach {
-	testLogging {
-		events "passed", "skipped", "failed"
-		exceptionFormat "full"
-		showStandardStreams = true
-	}
-}
+	apply plugin: 'java-library'							// apply(false)로 지정된 플러그인을 하위 모듈에서 사용
+	apply plugin: 'org.springframework.boot'
+	apply plugin: 'io.spring.dependency-management'
 
-// 테스트 태스크 구성
-tasks.named('test') {
-	useJUnitPlatform()
-
-	// 항상 실행되도록 설정 (UP-TO-DATE 무시)
-	outputs.upToDateWhen { false }
-}
-
-// 단위 테스트만 실행하는 태스크
-tasks.register('unitTest', Test) {
-	description = '단위 테스트만 실행합니다.'
-	group = 'verification'
-
-	useJUnitPlatform {
-		includeTags 'unit'
+	configurations {
+		compileOnly {
+			extendsFrom annotationProcessor						// compileOnly 설정이 annotationProcessor 설정 상속 (컴파일 시에만 사용)
+		}
 	}
 
-	// 항상 실행되도록 설정 (UP-TO-DATE 무시)
-	outputs.upToDateWhen { false }
-}
-
-// 통합 테스트만 실행하는 태스크
-tasks.register('integrationTest', Test) {
-	description = '통합 테스트만 실행합니다.'
-	group = 'verification'
-
-	useJUnitPlatform {
-		includeTags 'integration'
+	repositories {
+		mavenCentral()
 	}
 
-	// 항상 실행되도록 설정 (UP-TO-DATE 무시)
-	outputs.upToDateWhen { false }
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(21)		// 빌드 머신의 JDK와 관계없이 JDK21 환경에서 컴파일
+		}
+	}
+
+	/*
+		implementation: 컴파일과 런타임 모두에 필요
+		compileOnly: 컴파일 시에만 필요
+		annotationProcessor: 컴파일 시점에 어노테이션을 처리하는 프로세서
+		testImplementation: 테스트 컴파일 및 실행에만 필요한 라이브러리
+		testRuntimeOnly: 테스트 실행시에만 필요한 라이브러리
+ 	*/
+	dependencies {
+		implementation 'org.springframework.boot:spring-boot-starter-web'
+//		implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+//		implementation 'org.springframework.boot:spring-boot-starter-security'
+//		implementation 'org.springframework.boot:spring-boot-starter-validation'
+//		implementation 'com.mysql:mysql-connector-j:8.3.0'						// BOM에서 관리되지만 명확하게 버전 명시
+		compileOnly 'org.projectlombok:lombok'
+		annotationProcessor 'org.projectlombok:lombok'
+		testImplementation 'org.springframework.boot:spring-boot-starter-test'
+		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	}
+
+	tasks.withType(Test).configureEach {
+		testLogging {
+			events "passed", "skipped", "failed"
+			exceptionFormat "full"
+			showStandardStreams = true
+		}
+	}
+
+	// 테스트 태스크 구성
+	tasks.named('test') {
+		useJUnitPlatform()
+
+		// 항상 실행되도록 설정 (UP-TO-DATE 무시)
+		outputs.upToDateWhen { false }
+	}
+
+	// 단위 테스트만 실행하는 태스크
+	tasks.register('unitTest', Test) {
+		description = '단위 테스트만 실행합니다.'
+		group = 'verification'
+
+		useJUnitPlatform {
+			includeTags 'unit'
+		}
+
+		// 항상 실행되도록 설정 (UP-TO-DATE 무시)
+		outputs.upToDateWhen { false }
+	}
+
+	// 통합 테스트만 실행하는 태스크
+	tasks.register('integrationTest', Test) {
+		description = '통합 테스트만 실행합니다.'
+		group = 'verification'
+
+		useJUnitPlatform {
+			includeTags 'integration'
+		}
+
+		// 항상 실행되도록 설정 (UP-TO-DATE 무시)
+		outputs.upToDateWhen { false }
+	}
 }
