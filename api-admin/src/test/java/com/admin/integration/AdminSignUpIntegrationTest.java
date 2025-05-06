@@ -1,15 +1,15 @@
-package com.shopping.integration;
+package com.admin.integration;
 
+import com.admin.fixture.AdminFixture;
+import com.admin.global.exception.ConflictException;
+import com.admin.global.exception.ErrorCode;
+import com.admin.service.PasswordEncoder;
+import com.admin.web.request.AdminSignUpRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shopping.fixture.UserFixture;
-import com.shopping.global.exception.ErrorCode;
-import com.shopping.global.exception.NotFoundException;
-import com.shopping.service.PasswordEncoder;
-import com.shopping.storage.account.Account;
-import com.shopping.storage.admin.Admin;
-import com.shopping.storage.account.AccountRepository;
-import com.shopping.storage.admin.AdminRepository;
-import com.shopping.web.request.AdminSignUpRequest;
+import com.storage.account.Account;
+import com.storage.account.AccountRepository;
+import com.storage.admin.Admin;
+import com.storage.admin.AdminRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @DirtiesContext
 @Transactional
-public class AdminSignUpIntegrationTest {
+class AdminSignUpIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -53,8 +53,9 @@ public class AdminSignUpIntegrationTest {
     @Test
     @DisplayName("관리자 등록 성공 - 201 Created 응답")
     void signUp_201Created() throws Exception {
+        int a= 0;
         // given
-        AdminSignUpRequest request = UserFixture.createRequestForAdminSignUp();
+        AdminSignUpRequest request = AdminFixture.createRequestForAdminSignUp();
 
         // when
         ResultActions result = mockMvc.perform(
@@ -63,11 +64,12 @@ public class AdminSignUpIntegrationTest {
                 .content(objectMapper.writeValueAsString(request))
         );
 
+
         Account savedAccount = accountRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new ConflictException(ErrorCode.USER_NOT_FOUND));
 
         Admin savedAdmin = adminRepository.findById(savedAccount.getId())
-            .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new ConflictException(ErrorCode.USER_NOT_FOUND));
 
         // then
         result.andDo(print())
@@ -83,8 +85,8 @@ public class AdminSignUpIntegrationTest {
     @DisplayName("관리자 등록 실패 - 중복된 이메일")
     void signUp_ExistEmail() throws Exception {
         // given
-        AdminSignUpRequest request = UserFixture.createRequestForAdminSignUp();
-        AdminSignUpRequest signUpRequestExistEmail = UserFixture.createRequestForAdminSignUpParameter(
+        AdminSignUpRequest request = AdminFixture.createRequestForAdminSignUp();
+        AdminSignUpRequest signUpRequestExistEmail = AdminFixture.createRequestForAdminSignUpParameter(
             "admintest@email.com",
             "Qwer1234!!"
         );

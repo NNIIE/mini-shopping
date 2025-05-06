@@ -59,6 +59,20 @@ subprojects {
 		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	}
 
+	/*
+		./gradlew test							# 모든 테스트 실행
+		./gradlew unitTest						# 유닛 테스트 실행
+		./gradlew integrationTest				# 통합 테스트 실행
+
+		./gradlew :api-admin:test				# api-admin 모든 테스트 실행
+		./gradlew :api-admin:unitTest			# api-admin 유닛 테스트 실행
+		./gradlew :api-admin:integrationTest	# api-admin 통합 테스트 실행
+
+		./gradlew :api-user:test				# api-user 모든 테스트 실행
+		./gradlew :api-user:unitTest			# api-user 유닛 테스트 실행
+		./gradlew :api-user:integrationTest		# api-user 통합 테스트 실행
+	 */
+
 	tasks.withType(Test).configureEach {
 		testLogging {
 			events "passed", "skipped", "failed"

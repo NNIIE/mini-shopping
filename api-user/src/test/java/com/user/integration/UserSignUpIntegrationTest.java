@@ -1,16 +1,16 @@
-package com.shopping.integration;
+package com.user.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shopping.fixture.UserFixture;
-import com.shopping.global.exception.ErrorCode;
-import com.shopping.global.exception.NotFoundException;
-import com.shopping.service.PasswordEncoder;
-import com.shopping.storage.account.Account;
-import com.shopping.storage.user.User;
-import com.shopping.storage.account.AccountRepository;
-import com.shopping.storage.user.UserRepository;
-import com.shopping.web.request.UserSignUpRequest;
+import com.storage.account.Account;
+import com.storage.account.AccountRepository;
+import com.storage.user.User;
+import com.storage.user.UserRepository;
+import com.user.global.exception.ConflictException;
+import com.user.global.exception.ErrorCode;
+import com.user.service.PasswordEncoder;
+import com.user.web.request.UserSignUpRequest;
 import org.junit.jupiter.api.DisplayName;
+import com.user.fixture.UserFixture;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +55,7 @@ class UserSignUpIntegrationTest {
     void signUp_201Created() throws Exception {
         // given
         UserSignUpRequest request = UserFixture.createRequestForUserSignUp();
+        int a = 0;
 
         // when
         ResultActions result = mockMvc.perform(
@@ -64,10 +65,10 @@ class UserSignUpIntegrationTest {
         );
 
         Account savedAccount = accountRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new ConflictException(ErrorCode.USER_NOT_FOUND));
 
         User savedUser = userRepository.findById(savedAccount.getId())
-            .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new ConflictException(ErrorCode.USER_NOT_FOUND));
 
         // then
         result.andDo(print())
@@ -101,9 +102,9 @@ class UserSignUpIntegrationTest {
 
         // then
         mockMvc.perform(
-            post("/user")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(requestExistEmail)))
+                post("/user")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(requestExistEmail)))
             .andExpect(status().isConflict());
     }
 

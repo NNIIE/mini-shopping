@@ -7,8 +7,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
-@EntityScan("com.storage")
-@EnableJpaRepositories("com.storage")
+@EntityScan(basePackages = "com.storage")
+@EnableJpaRepositories(basePackages = "com.storage")
 @ComponentScan(basePackages = {"com.admin", "com.storage"})
 public class AdminApplication {
 

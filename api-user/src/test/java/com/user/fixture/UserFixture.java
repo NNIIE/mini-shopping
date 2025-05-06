@@ -1,11 +1,10 @@
-package com.shopping.fixture;
+package com.user.fixture;
 
-import com.shopping.global.enums.AccountStatus;
-import com.shopping.global.enums.UserRole;
-import com.shopping.storage.account.Account;
-import com.shopping.storage.user.User;
-import com.shopping.web.request.AdminSignUpRequest;
-import com.shopping.web.request.UserSignUpRequest;
+import com.storage.account.Account;
+import com.storage.enums.AccountStatus;
+import com.storage.enums.UserRole;
+import com.storage.user.User;
+import com.user.web.request.UserSignUpRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class UserFixture {
@@ -30,15 +29,6 @@ public class UserFixture {
             .build();
     }
 
-    public static Account createAdminAccount() {
-        return Account.builder()
-            .email("admintest@email.com")
-            .password(PASSWORD)
-            .role(UserRole.ADMIN)
-            .status(AccountStatus.ACTIVE)
-            .build();
-    }
-
     public static UserSignUpRequest createRequestForUserSignUp() {
         UserSignUpRequest request = new UserSignUpRequest();
         ReflectionTestUtils.setField(request, "email", "usertest@email.com");
@@ -50,32 +40,16 @@ public class UserFixture {
     }
 
     public static UserSignUpRequest createRequestForUserSignUpParameter(
-            final String email,
-            final String nickname,
-            final String password,
-            final String phoneNumber
+        final String email,
+        final String nickname,
+        final String password,
+        final String phoneNumber
     ) {
         UserSignUpRequest request = new UserSignUpRequest();
         ReflectionTestUtils.setField(request, "email", email);
         ReflectionTestUtils.setField(request, "nickname", nickname);
         ReflectionTestUtils.setField(request, "password", password);
         ReflectionTestUtils.setField(request, "phoneNumber", phoneNumber);
-
-        return request;
-    }
-
-    public static AdminSignUpRequest createRequestForAdminSignUp() {
-        AdminSignUpRequest request = new AdminSignUpRequest();
-        ReflectionTestUtils.setField(request, "email", "admintest@email.com");
-        ReflectionTestUtils.setField(request, "password", PASSWORD);
-
-        return request;
-    }
-
-    public static AdminSignUpRequest createRequestForAdminSignUpParameter(final String email, final String password) {
-        AdminSignUpRequest request = new AdminSignUpRequest();
-        ReflectionTestUtils.setField(request, "email", email);
-        ReflectionTestUtils.setField(request, "password", password);
 
         return request;
     }
