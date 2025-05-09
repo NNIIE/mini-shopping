@@ -1,4 +1,4 @@
-rootProject.name = 'shoping'
+rootProject.name = 'mini-shopping'
 include 'api-admin'
 include 'api-user'
 include 'storage'
