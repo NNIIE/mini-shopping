@@ -1,4 +1,4 @@
-package com.user.global.exception;
+package com.support.response;
 
 public record ExceptionResponse(
     int status,

@@ -9,7 +9,7 @@ import com.storage.user.UserRepository;
 import com.user.global.exception.ConflictException;
 import com.user.global.exception.ErrorCode;
 import com.user.web.request.UserSignUpRequest;
-import com.user.web.response.UserSignUpResponse;
+import com.user.web.response.UserSignUpDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,13 +23,13 @@ public class AuthService {
     private final UserRepository userRepository;
 
     @Transactional
-    public UserSignUpResponse userSignUp(final UserSignUpRequest request) {
+    public UserSignUpDto userSignUp(final UserSignUpRequest request) {
         checkDuplicateEmail(request.getEmail());
         checkDuplicateNickname(request.getNickname());
         final Account savedAccount = createAccount(request);
         final User savedUser = createUser(request, savedAccount);
 
-        return new UserSignUpResponse(
+        return new UserSignUpDto(
             savedUser.getId(),
             savedUser.getAccount().getEmail(),
             savedUser.getNickname()

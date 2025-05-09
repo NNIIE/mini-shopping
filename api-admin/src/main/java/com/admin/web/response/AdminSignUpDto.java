@@ -1,6 +1,6 @@
 package com.admin.web.response;
 
-public record AdminSignUpResponse(
+public record AdminSignUpDto(
     Long id,
     String email
 ) {
