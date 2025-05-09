@@ -2,4 +2,5 @@ rootProject.name = 'shoping'
 include 'api-admin'
 include 'api-user'
 include 'storage'
+include 'support'
 

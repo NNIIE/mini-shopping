@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import static com.admin.global.util.RegexpConstants.*;
+import static com.support.util.RegexpConstants.*;
 
 @Getter
 @NoArgsConstructor
