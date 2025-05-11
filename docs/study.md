@@ -5,6 +5,7 @@
 - [DDD / Hexagonal](#ddd--hexagonal)
 - [Index (MySQL / PostgreSQL)](#index-mysql--postgresql)
 - [정규화](#정규화)
+- [JWT](#jwt)
 - [Session / Token](#session--token)
 
 
@@ -223,7 +224,9 @@
 - 카디널리티가 인덱스 효율성의 핵심
 - pk, 이메일, 주민등록번호 등의 많은 고유값을 가질수록 높은 카디널리티
 
+
 <br>
+
 
 # 정규화
 ## 목적
@@ -296,6 +299,21 @@ A → B, B → C 일 때, A → C가 되면 안된다.
 
 ## 반정규화
 정규화된 데이터 모델에 중복을 의도적으로 다시 도입하여 성능을 개선하는 기법. 데이터 일관성과 성능 사이의 균형을 조정하는 과정
+
+
+<br>
+
+
+# JWT
+### 등장배경
+stateless, scale-out 등의 문제를 해결하기 위해 등장
+
+### 구조
+- Header
+  - 토큰 타입과 서명 알고리즘 명시
+  - Base64Url로 인코딩 됨
+- Payload
+  - 토큰에 담을 정보(Claim)를 포함
 
 
 <br>
