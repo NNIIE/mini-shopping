@@ -332,6 +332,14 @@ Header, Payload, Signature 가 .를 구분자로 하여 JWT 토큰 1개를 이�
 ### Base64Url 인코딩
 JWT에서는 일반적인 Base64 인코딩과 다름 (url 에서 안전하게 사용할 수 있게)
 - + -> -, / -> _, = 제거 등
+ 
+### Access / Refresh 
+- Access Token
+  - 클라이언트가 갖고있는 실제 유저의 정보가 담긴 토큰
+  - 실제 서버 API 요청 시 사용
+- Refresh Token
+  - 새로운 Access Token을 발급해주기 위해 사용하는 토큰
+  - 짧은 수명을 가지는 Access Token에게 새로운 토큰을 발급해 주기 위해 사용
 
 ### 장단점
 - 장점
@@ -344,6 +352,11 @@ JWT에서는 일반적인 Base64 인코딩과 다름 (url 에서 안전하게 �
   - 토큰 탈취 시 만료될때 까지 악용될 수 있음 - 즉시 무효화 불가
   - 일반적인 JSW 사용 시 페이로드는 암호화 되지 않고 단지 인코딩만 됨
   - none 취약점: 일부 라이브러리는 `alg: "none"` 을 허용하여 서명없이 토큰을 검증할 수 있음
+ 
+### 전략
+- 짧은 만료시간 사용
+- access token / refresh token 사용
+
  
 
 <br>
