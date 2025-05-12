@@ -6,6 +6,7 @@
 - [Index (MySQL / PostgreSQL)](#index-mysql--postgresql)
 - [정규화](#정규화)
 - [JWT](#jwt)
+- [Spring Security](#spring-security)
 - [Cookie / Session / Token / OAuth](#cookie--session--token--oauth)
 
 
@@ -358,6 +359,50 @@ JWT에서는 일반적인 Base64 인코딩과 다름 (url 에서 안전하게 �
 - access token / refresh token 사용
 
  
+<br>
+
+
+# Spring Security
+### 구조
+#### 모듈
+- spring-security-core: 인증/인가 핵심 API
+- spring-security-web: Servlet 필터, 세션 관리, CSRF, CORS 지원 
+- spring-security-config: XML 네임스페이스 및 Java Configuration 지원
+
+#### 주요 컴포넌트
+- SecurityContextHolder: 현재 인증된 사용자 정보를 저장하는 곳
+- Authentication: 인증된 사용자의 정보와 권한을 담는 객체
+- AuthenticationManager: 인증 처리를 담당하는 인터페이스
+- UserDetailsService: 사용자 정보를 로드하는 인터페이스
+- AccessDecisionManager: 권한 부여 결정을 담당하는 인터페이스
+- FilterChainProxy: 보안 필터 체인을 관리하는 특별한 필터
+
+#### Filter Chain
+모든 HTTP 요청은 FilterChainProxy(스프링 빈)를 통해 등록된 SecurityFilterChain을 순차 처리
+<br>
+이 구조 덕분에 특정 URL 패턴마다 다른 보안 정책을 적용하거나 커스텀 필터를 체인 중간에 삽입할 수 있다.
+1. DelegatingFilterProxy가 서블릿 컨테이너에 등록 -> Spring 컨텍스트의 FilterChainProxy로 위임
+2. 각 SecurityFilterChain에서 매칭 매커니즘(RequestMatcher) 으로 요청을 선별
+3. 매칭된 체인의 필터(SecurityContextPersistenceFilter, UsernamePasswordAuthenticationFilter, FilterSecurityInterceptor 등) 실행
+
+### 인증
+1. 사용자가 인증 요청을 보냅니다 (폼 로그인, 토큰 등).
+2. AuthenticationFilter가 요청을 가로채고 Authentication 객체를 생성
+3. 이 Authentication 객체는 AuthenticationManager에게 전달
+4. AuthenticationManager는 적절한 AuthenticationProvider에게 인증을 위임
+5. AuthenticationProvider는 UserDetailsService를 사용해 사용자 정보를 로드
+6. 비밀번호 검증 등의 인증 로직이 실행
+7. 인증이 성공하면 완전히 채워진 Authentication 객체가 반환
+8. SecurityContextHolder에 인증 정보가 저장
+
+### 인가
+1. 보안이 적용된 리소스에 접근 요청이 들어온다.
+2. FilterSecurityInterceptor가 요청을 가로챈다.
+3. SecurityContextHolder에서 현재 인증된 사용자 정보를 가져온다
+4. AccessDecisionManager에게 접근 결정을 위임
+5. AccessDecisionManager는 여러 AccessDecisionVoter를 사용해 접근 허용 여부를 결정
+6. 접근이 허용되면 요청이 계속 진행되고 그렇지 않으면 AccessDeniedException이 발생
+
 
 <br>
 
