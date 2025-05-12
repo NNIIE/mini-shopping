@@ -1,6 +1,6 @@
 package com.user.web.response;
 
-public record UserSignUpDto(
+public record UserSignUpResponse(
     Long id,
     String email,
     String nickname

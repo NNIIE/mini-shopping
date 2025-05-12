@@ -3,7 +3,7 @@ package com.admin.service;
 import com.admin.global.exception.ConflictException;
 import com.admin.global.exception.ErrorCode;
 import com.admin.web.request.AdminSignUpRequest;
-import com.admin.web.response.AdminSignUpDto;
+import com.admin.web.response.AdminSignUpResponse;
 import com.storage.account.Account;
 import com.storage.account.AccountRepository;
 import com.storage.admin.Admin;
@@ -23,12 +23,12 @@ public class AuthService {
     private final AdminRepository adminRepository;
 
     @Transactional
-    public AdminSignUpDto adminSignUp(final AdminSignUpRequest request) {
+    public AdminSignUpResponse adminSignUp(final AdminSignUpRequest request) {
         checkDuplicateEmail(request.getEmail());
         final Account savedAccount = createAccount(request);
         final Admin savedAdmin = createAdmin(savedAccount);
 
-        return new AdminSignUpDto(
+        return new AdminSignUpResponse(
             savedAdmin.getId(),
             savedAdmin.getAccount().getEmail()
         );

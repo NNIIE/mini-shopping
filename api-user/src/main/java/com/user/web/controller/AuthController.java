@@ -1,9 +1,8 @@
 package com.user.web.controller;
 
-import com.support.response.ApiResponse;
 import com.user.service.AuthService;
 import com.user.web.request.UserSignUpRequest;
-import com.user.web.response.UserSignUpDto;
+import com.user.web.response.UserSignUpResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,13 +20,12 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("")
-    public ResponseEntity<ApiResponse<UserSignUpDto>> userSignUp(@RequestBody @Valid final UserSignUpRequest userSignUpRequest) {
-        final UserSignUpDto dto = authService.userSignUp(userSignUpRequest);
-        final ApiResponse<UserSignUpDto> responseBody = ApiResponse.success(dto);
+    public ResponseEntity<UserSignUpResponse> userSignUp(@RequestBody @Valid final UserSignUpRequest userSignUpRequest) {
+        final UserSignUpResponse response = authService.userSignUp(userSignUpRequest);
 
         return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(responseBody);
+            .body(response);
     }
 
 }
