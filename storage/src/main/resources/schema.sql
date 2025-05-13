@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS brand;
 DROP TABLE IF EXISTS user;
 DROP TABLE IF EXISTS admin;
 DROP TABLE IF EXISTS account;
+DROP TABLE IF EXISTS token;
 
 CREATE TABLE account
 (
@@ -26,6 +27,7 @@ CREATE TABLE user
     account_id      INT UNSIGNED                    NOT NULL,
     nickname        VARCHAR(20)                     NOT NULL,
     phone_number    VARCHAR(30)                     NOT NULL,
+    refresh_token   VARCHAR(600)                    DEFAULT NULL,
     created_at      TIMESTAMP                       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP                       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -92,4 +94,18 @@ CREATE TABLE order_product
     quantity        INT UNSIGNED                         NOT NULL,
     created_at      TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE token
+(
+    id              BIGINT UNSIGNED AUTO_INCREMENT      PRIMARY KEY,
+    user_id         BIGINT UNSIGNED                     NOT NULL,
+    type            VARCHAR(20)                         NOT NULL,
+    token           VARCHAR(600)                        NOT NULL,
+    device          VARCHAR(255)                        NOT NULL,
+    ip_address      VARCHAR(50)                         NOT NULL,
+    issued_at       TIMESTAMP                           NOT NULL,
+    expires_at      TIMESTAMP                           NOT NULL,
+    created_at      TIMESTAMP                           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP                           NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

@@ -59,7 +59,7 @@ class UserSignUpIntegrationTest {
 
         // when
         ResultActions result = mockMvc.perform(
-            post("/user")
+            post("/user/signUp")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
         );
@@ -95,14 +95,14 @@ class UserSignUpIntegrationTest {
 
         // when
         mockMvc.perform(
-            post("/user")
+            post("/user/signUp")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
         );
 
         // then
         mockMvc.perform(
-                post("/user")
+                post("/user/signUp")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(requestExistEmail)))
             .andExpect(status().isConflict());
@@ -122,14 +122,14 @@ class UserSignUpIntegrationTest {
 
         // when
         mockMvc.perform(
-            post("/user")
+            post("/user/signUp")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
         );
 
         // then
         mockMvc.perform(
-                post("/user")
+                post("/user/signUp")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(requestExistNickname)))
             .andExpect(status().isConflict());
