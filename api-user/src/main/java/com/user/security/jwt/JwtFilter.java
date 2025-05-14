@@ -27,15 +27,21 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(token)) {
             final Long userId = tokenService.validateAccessTokenAndGetUserId(token);
-            final CustomUserDetails userDetails = (CustomUserDetails)
-                customUserDetailService.loadUserByUsername(userId.toString());
-            final UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities());
+            final CustomUserDetails userDetails = getUserDetails(userId);
+            final UsernamePasswordAuthenticationToken authenticationToken = getAuthenticationToken(userDetails);
+
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private CustomUserDetails getUserDetails(final Long userId) {
+        return (CustomUserDetails) customUserDetailService.loadUserByUsername(userId.toString());
+    }
+
+    private UsernamePasswordAuthenticationToken getAuthenticationToken(final CustomUserDetails userDetails) {
+        return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
     }
 
 }

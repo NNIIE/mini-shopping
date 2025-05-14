@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
+import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -31,16 +33,29 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
-            .formLogin(AbstractHttpConfigurer::disable)
-            .httpBasic(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests((auth) ->
-                auth.requestMatchers("/", "/user/signUp", "/user/signIn", "/user/reissueToken").permitAll()
-                    .anyRequest().authenticated())
-            .sessionManagement((session) ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(new JwtFilter(tokenService, customUserDetailService), UsernamePasswordAuthenticationFilter.class);
+            .authorizeHttpRequests(this::configureAuthorizeRequests)
+            .sessionManagement(this::configureSessionManagement)
+            .addFilterBefore(
+                new JwtFilter(tokenService, customUserDetailService),
+                UsernamePasswordAuthenticationFilter.class
+            );
 
         return http.build();
+    }
+
+    private void configureAuthorizeRequests(final AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth.requestMatchers(
+                "/",
+                "/user/signUp",
+                "/user/signIn",
+                "/user/reissueToken"
+            ).permitAll()
+            .anyRequest()
+            .authenticated();
+    }
+
+    private void configureSessionManagement(final SessionManagementConfigurer<HttpSecurity> session) {
+        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }
 
 }

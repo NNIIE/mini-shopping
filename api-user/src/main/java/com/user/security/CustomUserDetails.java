@@ -22,6 +22,7 @@ public class CustomUserDetails implements UserDetails {
         if (user.getAccount().getRole() == UserRole.ADMIN) {
             return List.of(new SimpleGrantedAuthority(ROLE_ADMIN));
         }
+
         return List.of(new SimpleGrantedAuthority(ROLE_USER));
     }
 

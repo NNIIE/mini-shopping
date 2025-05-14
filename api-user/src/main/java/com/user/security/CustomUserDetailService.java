@@ -23,7 +23,6 @@ public class CustomUserDetailService implements UserDetailsService {
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
 
             return new CustomUserDetails(user);
-
     }
 
 }

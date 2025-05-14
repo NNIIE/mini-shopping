@@ -37,6 +37,7 @@ public class TokenService {
 
     public void validateJwtExpiration(final String token) {
         final Date expiration = jwtTokenProvider.getExpiration(token);
+
         if (expiration == null || expiration.before(new Date())) {
             throw new BadRequestException(ErrorCode.EXPIRED_TOKEN);
         }
