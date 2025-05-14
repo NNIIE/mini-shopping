@@ -1,4 +1,4 @@
-package com.user.integration;
+package com.user.integration.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.storage.account.Account;

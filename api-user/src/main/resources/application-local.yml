@@ -4,6 +4,6 @@ spring:
 jwt:
   secret: jwtjwttokenkenjwtjwttokenkenjwtjwttokenkenabcdef
   access-token:
-    expire: 30m
+    expire: 1m
   refresh-token:
     expire: 7d
