@@ -27,7 +27,6 @@ CREATE TABLE user
     account_id      INT UNSIGNED                    NOT NULL,
     nickname        VARCHAR(20)                     NOT NULL,
     phone_number    VARCHAR(30)                     NOT NULL,
-    refresh_token   VARCHAR(600)                    DEFAULT NULL,
     created_at      TIMESTAMP                       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP                       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
