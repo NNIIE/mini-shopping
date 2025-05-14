@@ -1,8 +1,8 @@
 package com.user.global.config;
 
 import com.user.security.CustomUserDetailService;
-import com.user.security.JwtFilter;
-import com.user.security.TokenService;
+import com.user.security.jwt.JwtFilter;
+import com.user.service.TokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

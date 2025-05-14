@@ -1,18 +1,18 @@
-package com.user.security;
+package com.user.service;
 
 import com.storage.enums.DeviceType;
+import com.storage.enums.TokenType;
 import com.storage.token.Token;
 import com.storage.token.TokenRepository;
-import com.storage.enums.TokenType;
 import com.storage.user.User;
 import com.user.global.exception.BadRequestException;
 import com.user.global.exception.ErrorCode;
 import com.user.global.exception.NotFoundException;
+import com.user.security.jwt.JwtTokenProvider;
 import com.user.web.response.UserTokenPairDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.util.Date;

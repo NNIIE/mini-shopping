@@ -1,4 +1,4 @@
-package com.user.security;
+package com.user.security.jwt;
 
 import com.storage.enums.TokenType;
 import io.jsonwebtoken.JwtException;
