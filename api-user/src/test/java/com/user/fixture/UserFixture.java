@@ -4,6 +4,7 @@ import com.storage.account.Account;
 import com.storage.enums.AccountStatus;
 import com.storage.enums.UserRole;
 import com.storage.user.User;
+import com.user.web.request.UserSignInRequest;
 import com.user.web.request.UserSignUpRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -50,6 +51,25 @@ public class UserFixture {
         ReflectionTestUtils.setField(request, "nickname", nickname);
         ReflectionTestUtils.setField(request, "password", password);
         ReflectionTestUtils.setField(request, "phoneNumber", phoneNumber);
+
+        return request;
+    }
+
+    public static UserSignInRequest createRequestForUserSignIn() {
+        UserSignInRequest request = new UserSignInRequest();
+        ReflectionTestUtils.setField(request, "email", "usertest@email.com");
+        ReflectionTestUtils.setField(request, "password", PASSWORD);
+
+        return request;
+    }
+
+    public static UserSignInRequest createRequestForUserSignInParameter(
+        final String email,
+        final String password
+    ) {
+        UserSignInRequest request = new UserSignInRequest();
+        ReflectionTestUtils.setField(request, "email", email);
+        ReflectionTestUtils.setField(request, "password", password);
 
         return request;
     }
