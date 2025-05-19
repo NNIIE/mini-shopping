@@ -5,4 +5,12 @@
 - [API 명세](docs/api-spec.md)
 - [Schema](docs/schema.md)
 - [실행 및 테스트 방법](docs/execution-and-testing.md)
-- [관련 학습](docs/study.md)
+
+<br>
+
+### Study
+- [java](docs/study/java.md)
+- [spring](docs/study/spring.md)
+- [database](docs/study/database.md)
+- [security](docs/study/security.md)
+- [architecture](docs/study/architecture.md)
