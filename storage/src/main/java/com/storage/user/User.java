@@ -3,10 +3,7 @@ package com.storage.user;
 import com.storage.BaseEntity;
 import com.storage.account.Account;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
@@ -25,15 +22,20 @@ public class User extends BaseEntity {
 
     private String phoneNumber;
 
+    @Setter
+    private String refreshToken;
+
     @Builder
     public User(
         final Account account,
         final String nickname,
-        final String phoneNumber
+        final String phoneNumber,
+        final String refreshToken
     ) {
         this.account = account;
         this.nickname = nickname;
         this.phoneNumber = phoneNumber;
+        this.refreshToken = refreshToken;
     }
 
 }

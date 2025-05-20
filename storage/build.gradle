@@ -3,6 +3,5 @@ jar.enabled = true              // Jar 빌드 활성화 - 다른 모듈에서 �
 
 dependencies {
     api("org.springframework.boot:spring-boot-starter-data-jpa")    // api() 의존성 선언 (의존하는 다른 모듈에도 전이)
-    api('org.springframework.boot:spring-boot-starter-security')
     runtimeOnly("com.mysql:mysql-connector-j")
 }

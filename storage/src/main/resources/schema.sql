@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS brand;
 DROP TABLE IF EXISTS user;
 DROP TABLE IF EXISTS admin;
 DROP TABLE IF EXISTS account;
+DROP TABLE IF EXISTS token;
 
 CREATE TABLE account
 (
@@ -26,6 +27,7 @@ CREATE TABLE user
     account_id      INT UNSIGNED                    NOT NULL,
     nickname        VARCHAR(20)                     NOT NULL,
     phone_number    VARCHAR(30)                     NOT NULL,
+    refresh_token   VARCHAR(600)                    NULL,
     created_at      TIMESTAMP                       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP                       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
