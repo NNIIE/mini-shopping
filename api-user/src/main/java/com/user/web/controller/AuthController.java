@@ -42,10 +42,10 @@ public class AuthController {
     }
 
     @PostMapping("/reissueToken")
-    public ResponseEntity<UserTokenDto> reissueAccessToken(
+    public ResponseEntity<String> reissueAccessToken(
         @RequestBody @Valid final ReissueTokenRequest request
     ) {
-        final UserTokenDto response = authService.reissueAccessToken(request);
+        final String response = authService.reissueAccessToken(request);
 
         return ResponseEntity
             .status(HttpStatus.OK)

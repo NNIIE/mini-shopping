@@ -26,9 +26,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @Tag("integration")
 @SpringBootTest
@@ -130,7 +130,6 @@ class UserSignInIntegrationTest {
 
         String responseContent = signInResult.getResponse().getContentAsString();
         String refreshToken = new JSONObject(responseContent).getString("refreshToken");
-
         ReissueTokenRequest reissueRequest = TokenFixture.createRequestForReissueToken(refreshToken);
 
         // when & then
@@ -138,8 +137,8 @@ class UserSignInIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(reissueRequest)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.accessToken").exists())
-            .andExpect(jsonPath("$.refreshToken").exists());
+            .andExpect(content().contentType(MediaType.TEXT_PLAIN_VALUE + ";charset=UTF-8"))
+            .andExpect(content().string(containsString("eyJhbGciOiJ")));
     }
 
     @Test

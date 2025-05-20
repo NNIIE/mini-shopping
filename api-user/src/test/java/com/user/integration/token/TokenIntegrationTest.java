@@ -3,16 +3,16 @@ package com.user.integration.token;
 import com.storage.account.Account;
 import com.storage.account.AccountRepository;
 import com.storage.enums.AccountStatus;
-import com.storage.enums.DeviceType;
 import com.storage.enums.TokenType;
 import com.storage.enums.UserRole;
-import com.storage.token.Token;
-import com.storage.token.TokenRepository;
 import com.storage.user.User;
 import com.storage.user.UserRepository;
 import com.user.exception.BusinessException;
+import com.user.fixture.TokenFixture;
 import com.user.jwt.JwtTokenProvider;
+import com.user.service.AuthService;
 import com.user.service.TokenService;
+import com.user.web.request.ReissueTokenRequest;
 import com.user.web.response.UserTokenDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,8 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -44,10 +42,10 @@ class TokenIntegrationTest {
     private TokenService tokenService;
 
     @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+    private AuthService authService;
 
     @Autowired
-    private TokenRepository tokenRepository;
+    private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
     private UserRepository userRepository;
@@ -61,7 +59,6 @@ class TokenIntegrationTest {
     private User testUser;
     private String validAccessToken;
     private String validRefreshToken;
-    private Instant issuedAt;
 
     @BeforeEach
     void setUp() {
@@ -80,16 +77,12 @@ class TokenIntegrationTest {
             .build();
         userRepository.save(testUser);
 
-        issuedAt = Instant.now();
+        Instant issuedAt = Instant.now();
         validAccessToken = jwtTokenProvider.generateToken(TokenType.ACCESS, testUser.getId(), issuedAt);
         validRefreshToken = jwtTokenProvider.generateToken(TokenType.REFRESH, testUser.getId(), issuedAt);
-        tokenService.issueRefreshToken(
-            testUser,
-            validRefreshToken,
-            DeviceType.MAC,
-            "127.0.0.1",
-            issuedAt
-        );
+
+        testUser.setRefreshToken(validRefreshToken);
+        userRepository.save(testUser);
     }
 
     @Test
@@ -124,32 +117,35 @@ class TokenIntegrationTest {
     }
 
     @Test
-    @DisplayName("유효한 리프레시 토큰으로 토큰 조회 성공")
-    void validateAndGetRefreshToken_WithValidToken() {
+    @DisplayName("리프레시 토큰에서 사용자 ID 추출 성공")
+    void validateTokenAndGetUserId_WithValidToken_ShouldReturnUserId() {
         // when
-        Token token = tokenService.validateAndGetRefreshToken(validRefreshToken);
+        Long userId = tokenService.validateTokenAndGetUserId(validRefreshToken);
 
         // then
-        assertAll(
-            () -> assertThat(token).isNotNull(),
-            () -> assertThat(token.getToken()).isEqualTo(validRefreshToken),
-            () -> assertThat(token.getUser().getId()).isEqualTo(testUser.getId())
-        );
+        assertThat(userId).isEqualTo(testUser.getId());
     }
 
     @Test
-    @DisplayName("존재하지 않는 리프레시 토큰으로 예외 발생")
-    void validateAndGetRefreshToken_WithNonExistentToken() {
+    @DisplayName("예외 발생 - 잘못된 리프레시 토큰")
+    void validateTokenAndGetUserId_WithInvalidFormat_ShouldThrowException() {
         // given
-        String nonExistentToken = jwtTokenProvider.generateToken(
-            TokenType.REFRESH,
-            Long.MAX_VALUE,
-            Instant.now()
-        );
+        String invalidToken = "this.is.invalid.refresh.token";
 
         // when & then
-        BusinessException exception = assertThrows(BusinessException.class, () -> tokenService.validateAndGetRefreshToken(nonExistentToken));
-        assertThat(exception.getErrorCode().name()).isEqualTo("INVALID_TOKEN");
+        assertThrows(BusinessException.class, () -> tokenService.validateTokenAndGetUserId(invalidToken));
+    }
+
+    @Test
+    @DisplayName("예외 발생 - 만료된 리프레시 토큰")
+    void validateTokenAndGetUserId_WithExpiredToken() {
+        // given
+        long refreshTokenExpiryMs = TokenType.REFRESH.getExpiredMs();
+        Instant expiredIssuedAt = Instant.now().minus(refreshTokenExpiryMs + 86400000, ChronoUnit.MILLIS);
+        String expiredToken = jwtTokenProvider.generateToken(TokenType.REFRESH, testUser.getId(), expiredIssuedAt);
+
+        // when & then
+        assertThrows(BusinessException.class, () -> tokenService.validateTokenAndGetUserId(expiredToken));
     }
 
     @Test
@@ -181,31 +177,62 @@ class TokenIntegrationTest {
             () -> assertThat(tokenPair.refreshToken()).isNotBlank(),
             () -> assertThat(userIdFromAccess).isEqualTo(testUser.getId()),
             () -> assertThat(userIdFromRefresh).isEqualTo(testUser.getId())
-        );;
+        );
     }
 
     @Test
-    @DisplayName("동일 디바이스에 대한 리프레시 토큰 발급 시 기존 토큰 삭제")
-    void issueRefreshToken_WithExistingTokenForSameDevice() {
-        // given
-        DeviceType device = DeviceType.MAC;
-        String newRefreshToken = jwtTokenProvider.generateToken(TokenType.REFRESH, testUser.getId(), Instant.now());
-        String ipAddress = "192.168.1.2";
-        Instant now = Instant.now();
-        List<Token> tokensBeforeIssue = tokenRepository.findAll();
-        assertThat(tokensBeforeIssue).hasSize(1);
-
+    @DisplayName("액세스 토큰만 생성 성공")
+    void createAccessToken() {
         // when
-        tokenService.issueRefreshToken(testUser, newRefreshToken, device, ipAddress, now);
+        String accessToken = tokenService.createAccessToken(testUser.getId(), Instant.now());
+        Long userIdFromAccess = jwtTokenProvider.getClaim(accessToken, "id", Long.class);
 
         // then
-        List<Token> tokensAfterIssue = tokenRepository.findAll();
-        assertThat(tokensAfterIssue).hasSize(1);
+        assertAll(
+            () -> assertThat(accessToken).isNotBlank(),
+            () -> assertThat(userIdFromAccess).isEqualTo(testUser.getId())
+        );
+    }
 
-        Optional<Token> savedToken = tokenRepository.findByUserIdAndTokenAndType(
-            testUser.getId(), newRefreshToken, TokenType.REFRESH);
-        assertThat(savedToken).isPresent();
-        assertThat(savedToken.get().getToken()).isEqualTo(newRefreshToken);
+    @Test
+    @DisplayName("리프레시 토큰으로 액세스 토큰 재발급 성공")
+    void reissueAccessToken_success() {
+        // given
+        ReissueTokenRequest request = TokenFixture.createRequestForReissueToken(validRefreshToken);
+
+        // when
+        String newAccessToken = authService.reissueAccessToken(request);
+        Long userIdFromToken = jwtTokenProvider.getClaim(newAccessToken, "id", Long.class);
+
+        // then
+        assertAll(
+            () -> assertThat(newAccessToken).isNotNull(),
+            () -> assertThat(newAccessToken).isNotBlank(),
+            () -> assertThat(userIdFromToken).isEqualTo(testUser.getId())
+        );
+    }
+
+    @Test
+    @DisplayName("리프레시 토큰으로 액세스 토큰 재발급 실패 - 사용자와 토큰 불일치")
+    void reissueAccessToken_failure_tokenMismatch() {
+        // given
+        String differentRefreshToken = "eyJhbGciOiJIUzM4NCJ9.different_token_value.signature";
+        ReissueTokenRequest request = TokenFixture.createRequestForReissueToken(differentRefreshToken);
+
+        // then
+        assertThrows(BusinessException.class, () -> authService.reissueAccessToken(request));
+    }
+
+    @Test
+    @DisplayName("리프레시 토큰으로 액세스 토큰 재발급 실패 - 만료된 토큰")
+    void reissueAccessToken_failure_expiredToken() {
+        // given
+        Instant expiredIssuedAt = Instant.now().minus(8, ChronoUnit.DAYS);
+        String expiredRefreshToken = jwtTokenProvider.generateToken(TokenType.REFRESH, testUser.getId(), expiredIssuedAt);
+        ReissueTokenRequest request = TokenFixture.createRequestForReissueToken(expiredRefreshToken);
+
+        // when & then
+        assertThrows(BusinessException.class, () -> authService.reissueAccessToken(request));
     }
 
 }

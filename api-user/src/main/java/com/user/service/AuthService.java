@@ -2,8 +2,6 @@ package com.user.service;
 
 import com.storage.account.Account;
 import com.storage.account.AccountRepository;
-import com.storage.enums.DeviceType;
-import com.storage.token.Token;
 import com.storage.user.User;
 import com.storage.user.UserRepository;
 import com.user.domain.account.AccountFactory;
@@ -56,33 +54,23 @@ public class AuthService {
         final Instant now = Instant.now();
         final UserTokenDto tokenResponse = tokenService.createAccessAndRefreshToken(user.getId(), now);
 
-        tokenService.issueRefreshToken(
-            user,
-            tokenResponse.refreshToken(),
-            DeviceType.MAC,
-            "123.456.789",
-            now
-        );
+        user.setRefreshToken(tokenResponse.refreshToken());
 
         return tokenResponse;
     }
 
     @Transactional
-    public UserTokenDto reissueAccessToken(final ReissueTokenRequest request) {
-        final Token originRefreshToken = tokenService.validateAndGetRefreshToken(request.getRefreshToken());
-        final User user = originRefreshToken.getUser();
-        final Instant now = Instant.now();
-        final UserTokenDto tokenResponse = tokenService.createAccessAndRefreshToken(user.getId(), now);
+    public String reissueAccessToken(final ReissueTokenRequest request) {
+        final Long userId = tokenService.validateTokenAndGetUserId(request.getRefreshToken());
 
-        tokenService.rotateRefreshToken(
-            originRefreshToken,
-            tokenResponse.refreshToken(),
-            DeviceType.MAC,
-            "123.456.789",
-            now
-        );
+        final User user = userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        return tokenResponse;
+        if (!user.getRefreshToken().equals(request.getRefreshToken())) {
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
+        }
+
+        return tokenService.createAccessToken(user.getId(), Instant.now());
     }
 
     public User authenticateUser(final UserSignInRequest request) {

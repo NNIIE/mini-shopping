@@ -1,17 +1,14 @@
 package com.user.unit.auth;
 
-import com.storage.enums.DeviceType;
-import com.storage.enums.TokenType;
-import com.storage.token.Token;
 import com.storage.user.User;
+import com.storage.user.UserRepository;
 import com.user.exception.BusinessException;
+import com.user.exception.ErrorCode;
 import com.user.fixture.TokenFixture;
 import com.user.fixture.UserFixture;
-import com.user.exception.ErrorCode;
 import com.user.service.AuthService;
 import com.user.service.TokenService;
 import com.user.web.request.ReissueTokenRequest;
-import com.user.web.response.UserTokenDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -22,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -36,65 +34,53 @@ class ReIssueTokenUnitTest {
     @Mock
     private TokenService tokenService;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private AuthService authService;
 
-    private User mockUser;
-    private Token mockRefreshToken;
     private ReissueTokenRequest validRequest;
-    private UserTokenDto mockTokenPair;
-    private Instant testInstant;
+    private String mockAccessToken;
 
     @BeforeEach
     void setUp() {
-        testInstant = Instant.now();
-        mockUser = UserFixture.createUser(UserFixture.createUserAccount());
+        User mockUser = UserFixture.createUser(UserFixture.createUserAccount());
+        mockUser.setRefreshToken("valid.refresh.token");
         validRequest = TokenFixture.createRequestForReissueToken("valid.refresh.token");
-        mockTokenPair = new UserTokenDto("new.access.token", "new.refresh.token");
-        mockRefreshToken = Token.builder()
-            .id(1L)
-            .user(mockUser)
-            .type(TokenType.REFRESH)
-            .token("valid.refresh.token")
-            .device(DeviceType.MAC)
-            .ipAddress("123.456.789")
-            .issuedAt(testInstant.minusSeconds(3600))
-            .expiresAt(testInstant.plusSeconds(3600))
-            .build();
+        mockAccessToken = "new.access.token";
     }
 
     @Test
     @DisplayName("토큰 재발급 성공")
     void reissueAccessToken_success() {
         // given
-        when(tokenService.validateAndGetRefreshToken(anyString())).thenReturn(mockRefreshToken);
-        when(tokenService.createAccessAndRefreshToken(isNull(), any(Instant.class))).thenReturn(mockTokenPair);
+        Long userId = 1L;
+        User mockUser = mock(User.class);
+        when(mockUser.getId()).thenReturn(userId);
+        when(mockUser.getRefreshToken()).thenReturn("valid.refresh.token");
+        when(tokenService.validateTokenAndGetUserId(anyString())).thenReturn(userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+        when(tokenService.createAccessToken(eq(userId), any(Instant.class))).thenReturn(mockAccessToken);
 
         // when
-        UserTokenDto result = authService.reissueAccessToken(validRequest);
+        String result = authService.reissueAccessToken(validRequest);
 
         // then
         assertAll(
             () -> assertThat(result).isNotNull(),
-            () -> assertThat(result.accessToken()).isEqualTo("new.access.token"),
-            () -> assertThat(result.refreshToken()).isEqualTo("new.refresh.token")
+            () -> assertThat(result).isEqualTo(mockAccessToken)
         );
-        verify(tokenService).validateAndGetRefreshToken("valid.refresh.token");
-        verify(tokenService).createAccessAndRefreshToken(isNull(), any(Instant.class));
-        verify(tokenService).rotateRefreshToken(
-            eq(mockRefreshToken),
-            eq("new.refresh.token"),
-            eq(DeviceType.MAC),
-            eq("123.456.789"),
-            any(Instant.class)
-        );
+        verify(tokenService).validateTokenAndGetUserId("valid.refresh.token");
+        verify(userRepository).findById(userId);
+        verify(tokenService).createAccessToken(eq(userId), any(Instant.class));
     }
 
     @Test
     @DisplayName("토큰 재발급 실패 - 유효하지 않은 리프레시 토큰")
     void reissueAccessToken_invalid_refreshToken() {
         // given
-        when(tokenService.validateAndGetRefreshToken(anyString()))
+        when(tokenService.validateTokenAndGetUserId(anyString()))
             .thenThrow(new BusinessException(ErrorCode.INVALID_TOKEN));
 
         // when then
@@ -107,8 +93,8 @@ class ReIssueTokenUnitTest {
         // given
         String expiredTokenValue = "expired.refresh.token";
         ReissueTokenRequest expiredRequest = TokenFixture.createRequestForReissueToken(expiredTokenValue);
-        when(tokenService.validateAndGetRefreshToken(expiredTokenValue))
-            .thenThrow(new BusinessException(ErrorCode.INVALID_TOKEN));
+        when(tokenService.validateTokenAndGetUserId(expiredTokenValue))
+            .thenThrow(new BusinessException(ErrorCode.EXPIRED_TOKEN));
 
         // when then
         assertThrows(BusinessException.class, () -> authService.reissueAccessToken(expiredRequest));

@@ -1,10 +1,6 @@
 package com.user.service;
 
-import com.storage.enums.DeviceType;
 import com.storage.enums.TokenType;
-import com.storage.token.Token;
-import com.storage.token.TokenRepository;
-import com.storage.user.User;
 import com.user.exception.BusinessException;
 import com.user.exception.ErrorCode;
 import com.user.jwt.JwtTokenProvider;
@@ -21,7 +17,6 @@ import java.util.Date;
 public class TokenService {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final TokenRepository tokenRepository;
 
     public void validateJwt(final String token) {
         validateJwtFormat(token);
@@ -53,22 +48,17 @@ public class TokenService {
         return userId;
     }
 
-    public Token validateAndGetRefreshToken(final String refreshToken) {
+    public Long validateTokenAndGetUserId(final String refreshToken) {
         validateJwtFormat(refreshToken);
+        validateJwtExpiration(refreshToken);
+
         final Long userId = jwtTokenProvider.getClaim(refreshToken, "id", Long.class);
 
         if (userId == null) {
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
-        final Token token = tokenRepository.findByUserIdAndTokenAndType(userId, refreshToken, TokenType.REFRESH)
-            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
-
-        if (token.getExpiresAt().isBefore(Instant.now())) {
-            throw new BusinessException(ErrorCode.INVALID_TOKEN);
-        }
-
-        return token;
+        return userId;
     }
 
     public String extractAndValidateToken(final HttpServletRequest request) {
@@ -85,48 +75,11 @@ public class TokenService {
         );
     }
 
-    public void issueRefreshToken(
-        final User user,
-        final String refreshToken,
-        final DeviceType device,
-        final String ipAddress,
+    public String createAccessToken(
+        final Long userId,
         final Instant issuedAt
     ) {
-        tokenRepository.deleteByUserIdAndTypeAndDevice(user.getId(), TokenType.REFRESH, device);
-
-        final Token token = Token.builder()
-            .user(user)
-            .type(TokenType.REFRESH)
-            .token(refreshToken)
-            .device(device)
-            .ipAddress(ipAddress)
-            .issuedAt(issuedAt)
-            .expiresAt(issuedAt.plusMillis(TokenType.REFRESH.getExpiredMs()))
-            .build();
-
-        tokenRepository.save(token);
-    }
-
-    public void rotateRefreshToken(
-        final Token oldToken,
-        final String newRefreshToken,
-        final DeviceType device,
-        final String ipAddress,
-        final Instant issuedAt
-    ) {
-        tokenRepository.delete(oldToken);
-
-        Token token = Token.builder()
-            .user(oldToken.getUser())
-            .type(TokenType.REFRESH)
-            .token(newRefreshToken)
-            .device(device)
-            .ipAddress(ipAddress)
-            .issuedAt(issuedAt)
-            .expiresAt(issuedAt.plusMillis(TokenType.REFRESH.getExpiredMs()))
-            .build();
-
-        tokenRepository.save(token);
+        return jwtTokenProvider.generateToken(TokenType.ACCESS, userId, issuedAt);
     }
 
 }

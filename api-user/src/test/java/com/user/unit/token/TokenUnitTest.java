@@ -1,16 +1,10 @@
 package com.user.unit.token;
 
-import com.storage.enums.DeviceType;
 import com.storage.enums.TokenType;
-import com.storage.token.Token;
-import com.storage.token.TokenRepository;
-import com.storage.user.User;
 import com.user.exception.BusinessException;
-import com.user.fixture.UserFixture;
 import com.user.jwt.JwtTokenProvider;
 import com.user.service.TokenService;
 import com.user.web.response.UserTokenDto;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -21,14 +15,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.Date;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
@@ -37,30 +29,8 @@ class TokenUnitTest {
     @Mock
     private JwtTokenProvider jwtTokenProvider;
 
-    @Mock
-    private TokenRepository tokenRepository;
-
     @InjectMocks
     private TokenService tokenService;
-
-    private User mockUser;
-    private Token mockToken;
-
-    @BeforeEach
-    void setUp() {
-        mockUser = UserFixture.createUser(UserFixture.createUserAccount());
-        Instant now = Instant.now();
-        mockToken = Token.builder()
-            .id(1L)
-            .user(mockUser)
-            .type(TokenType.REFRESH)
-            .token("validRefreshToken")
-            .device(DeviceType.MAC)
-            .ipAddress("127.0.0.1")
-            .issuedAt(now)
-            .expiresAt(now.plusSeconds(3600))
-            .build();
-    }
 
     @Test
     @DisplayName("액세스 토큰 검증 및 사용자 ID 추출 성공")
@@ -101,23 +71,32 @@ class TokenUnitTest {
     }
 
     @Test
-    @DisplayName("유효한 리프레시 토큰 검증 및 조회 성공")
-    void validate_and_get_refreshToken() {
+    @DisplayName("리프레시 토큰 검증 및 사용자 ID 추출 성공")
+    void validateTokenAndGetUserId_success() {
         // given
         String validRefreshToken = "validRefreshToken";
         given(jwtTokenProvider.isParsable(validRefreshToken)).willReturn(true);
+        given(jwtTokenProvider.getExpiration(validRefreshToken)).willReturn(new Date(System.currentTimeMillis() + 3600000));
         given(jwtTokenProvider.getClaim(validRefreshToken, "id", Long.class)).willReturn(1L);
-        given(tokenRepository.findByUserIdAndTokenAndType(anyLong(), anyString(), any(TokenType.class)))
-            .willReturn(Optional.of(mockToken));
 
         // when
-        Token result = tokenService.validateAndGetRefreshToken(validRefreshToken);
+        Long userId = tokenService.validateTokenAndGetUserId(validRefreshToken);
 
         // then
-        assertAll(
-            () -> assertThat(result).isNotNull(),
-            () -> assertThat(result.getToken()).isEqualTo("validRefreshToken")
-        );
+        assertThat(userId).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("ID가 없는 리프레시 토큰 검증 실패")
+    void validateTokenAndGetUserId_null_id() {
+        // given
+        String validFormatToken = "validFormatToken";
+        given(jwtTokenProvider.isParsable(validFormatToken)).willReturn(true);
+        given(jwtTokenProvider.getExpiration(validFormatToken)).willReturn(new Date(System.currentTimeMillis() + 3600000));
+        given(jwtTokenProvider.getClaim(validFormatToken, "id", Long.class)).willReturn(null);
+
+        // when, then
+        assertThrows(BusinessException.class, () -> tokenService.validateTokenAndGetUserId(validFormatToken));
     }
 
     @Test
@@ -141,20 +120,32 @@ class TokenUnitTest {
     }
 
     @Test
-    @DisplayName("refresh 토큰 발급 성공")
-    void issue_refreshToken() {
+    @DisplayName("액세스 토큰만 생성 성공")
+    void create_accessToken() {
         // given
-        String refreshToken = "newRefreshToken";
-        DeviceType device = DeviceType.MAC;
-        String ipAddress = "127.0.0.1";
+        Long userId = 1L;
         Instant issuedAt = Instant.now();
+        given(jwtTokenProvider.generateToken(TokenType.ACCESS, userId, issuedAt)).willReturn("accessToken");
 
         // when
-        tokenService.issueRefreshToken(mockUser, refreshToken, device, ipAddress, issuedAt);
+        String result = tokenService.createAccessToken(userId, issuedAt);
 
         // then
-        verify(tokenRepository).deleteByUserIdAndTypeAndDevice(mockUser.getId(), TokenType.REFRESH, device);
-        verify(tokenRepository).save(any(Token.class));
+        assertThat(result).isEqualTo("accessToken");
+    }
+
+    @Test
+    @DisplayName("HTTP 요청에서 토큰 추출 성공")
+    void extractAndValidateToken() {
+        // given
+        jakarta.servlet.http.HttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest();
+        given(jwtTokenProvider.resolveToken(any())).willReturn("extractedToken");
+
+        // when
+        String result = tokenService.extractAndValidateToken(request);
+
+        // then
+        assertThat(result).isEqualTo("extractedToken");
     }
 
 }

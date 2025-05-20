@@ -1,6 +1,5 @@
 package com.user.unit.auth;
 
-import com.storage.enums.DeviceType;
 import com.storage.user.User;
 import com.storage.user.UserRepository;
 import com.user.exception.BusinessException;
@@ -19,7 +18,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -29,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
@@ -73,13 +70,6 @@ class UserSignInUnitTest {
             () -> assertThat(Objects.requireNonNull(result).accessToken()).isEqualTo("accessToken"),
             () -> assertThat(Objects.requireNonNull(result).refreshToken()).isEqualTo("refreshToken")
         );
-
-        verify(tokenService).issueRefreshToken(
-            any(User.class),
-            anyString(),
-            any(DeviceType.class),
-            anyString(),
-            any(Instant.class));
     }
 
     @Test

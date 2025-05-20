@@ -55,7 +55,6 @@ class UserSignUpIntegrationTest {
     void signUp_201Created() throws Exception {
         // given
         UserSignUpRequest request = UserFixture.createRequestForUserSignUp();
-        int a = 0;
 
         // when
         ResultActions result = mockMvc.perform(
