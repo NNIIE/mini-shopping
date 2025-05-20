@@ -1,7 +1,7 @@
 package com.user.unit.auth;
 
 import com.storage.enums.TokenType;
-import com.user.security.jwt.JwtTokenProvider;
+import com.user.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;

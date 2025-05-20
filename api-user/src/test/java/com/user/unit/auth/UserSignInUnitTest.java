@@ -1,16 +1,15 @@
 package com.user.unit.auth;
 
-import com.storage.account.Account;
 import com.storage.enums.DeviceType;
 import com.storage.user.User;
 import com.storage.user.UserRepository;
+import com.user.exception.BusinessException;
 import com.user.fixture.UserFixture;
-import com.user.global.exception.NotFoundException;
 import com.user.service.AuthService;
 import com.user.service.PasswordEncoder;
 import com.user.service.TokenService;
 import com.user.web.request.UserSignInRequest;
-import com.user.web.response.UserTokenPairDto;
+import com.user.web.response.UserTokenDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -63,10 +62,10 @@ class UserSignInUnitTest {
         // Given
         given(userRepository.findByEmail(anyString())).willReturn(Optional.of(mockUser));
         given(passwordEncoder.verifyPassword(anyString(), anyString())).willReturn(true);
-        given(tokenService.createTokenPair(any(), any())).willReturn(new UserTokenPairDto("accessToken", "refreshToken"));
+        given(tokenService.createAccessAndRefreshToken(any(), any())).willReturn(new UserTokenDto("accessToken", "refreshToken"));
 
         // When
-        UserTokenPairDto result = authService.signIn(userSignInRequest);
+        UserTokenDto result = authService.signIn(userSignInRequest);
 
         // Then
         assertAll(
@@ -90,7 +89,7 @@ class UserSignInUnitTest {
         given(userRepository.findByEmail(anyString())).willReturn(Optional.empty());
 
         // When Then
-        assertThrows(NotFoundException.class, () -> authService.signIn(userSignInRequest));
+        assertThrows(BusinessException.class, () -> authService.signIn(userSignInRequest));
     }
 
     @Test
@@ -101,7 +100,7 @@ class UserSignInUnitTest {
         given(passwordEncoder.verifyPassword(anyString(), anyString())).willReturn(false);
 
         // When Then
-        assertThrows(NotFoundException.class, () -> authService.signIn(userSignInRequest));
+        assertThrows(BusinessException.class, () -> authService.signIn(userSignInRequest));
     }
 
 }

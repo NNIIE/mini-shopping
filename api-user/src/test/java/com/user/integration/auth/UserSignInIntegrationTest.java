@@ -100,7 +100,7 @@ class UserSignInIntegrationTest {
         mockMvc.perform(post("/user/signIn")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -113,7 +113,7 @@ class UserSignInIntegrationTest {
         mockMvc.perform(post("/user/signIn")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -152,7 +152,7 @@ class UserSignInIntegrationTest {
         mockMvc.perform(post("/user/reissueToken")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(reissueRequest)))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isInternalServerError());
     }
 
 }

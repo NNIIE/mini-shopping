@@ -4,7 +4,7 @@ import com.user.service.AuthService;
 import com.user.web.request.ReissueTokenRequest;
 import com.user.web.request.UserSignInRequest;
 import com.user.web.request.UserSignUpRequest;
-import com.user.web.response.UserTokenPairDto;
+import com.user.web.response.UserTokenDto;
 import com.user.web.response.UserSignUpResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +31,10 @@ public class AuthController {
     }
 
     @PostMapping("/signIn")
-    public ResponseEntity<UserTokenPairDto> signIn(
+    public ResponseEntity<UserTokenDto> signIn(
         @RequestBody @Valid final UserSignInRequest userSignInRequest
     ) {
-        UserTokenPairDto response = authService.signIn(userSignInRequest);
+        UserTokenDto response = authService.signIn(userSignInRequest);
 
         return ResponseEntity
             .status(HttpStatus.OK)
@@ -42,10 +42,10 @@ public class AuthController {
     }
 
     @PostMapping("/reissueToken")
-    public ResponseEntity<UserTokenPairDto> reissueAccessToken(
+    public ResponseEntity<UserTokenDto> reissueAccessToken(
         @RequestBody @Valid final ReissueTokenRequest request
     ) {
-        final UserTokenPairDto response = authService.reissueAccessToken(request);
+        final UserTokenDto response = authService.reissueAccessToken(request);
 
         return ResponseEntity
             .status(HttpStatus.OK)

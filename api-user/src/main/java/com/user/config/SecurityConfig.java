@@ -1,13 +1,12 @@
-package com.user.global.config;
+package com.user.config;
 
 import com.user.security.CustomUserDetailService;
-import com.user.security.jwt.JwtFilter;
+import com.user.jwt.JwtFilter;
 import com.user.service.TokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
@@ -17,7 +16,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -29,6 +27,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // Spring: Configuration + SecurityFilterChain Bean 을 정의하면 @EnableWebSecurity 사용 불필요
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         http

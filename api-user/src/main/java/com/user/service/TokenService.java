@@ -5,11 +5,10 @@ import com.storage.enums.TokenType;
 import com.storage.token.Token;
 import com.storage.token.TokenRepository;
 import com.storage.user.User;
-import com.user.global.exception.BadRequestException;
-import com.user.global.exception.ErrorCode;
-import com.user.global.exception.NotFoundException;
-import com.user.security.jwt.JwtTokenProvider;
-import com.user.web.response.UserTokenPairDto;
+import com.user.exception.BusinessException;
+import com.user.exception.ErrorCode;
+import com.user.jwt.JwtTokenProvider;
+import com.user.web.response.UserTokenDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -31,7 +30,7 @@ public class TokenService {
 
     public void validateJwtFormat(final String token) {
         if (!jwtTokenProvider.isParsable(token)) {
-            throw new BadRequestException(ErrorCode.INVALID_TOKEN);
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
     }
 
@@ -39,7 +38,7 @@ public class TokenService {
         final Date expiration = jwtTokenProvider.getExpiration(token);
 
         if (expiration == null || expiration.before(new Date())) {
-            throw new BadRequestException(ErrorCode.EXPIRED_TOKEN);
+            throw new BusinessException(ErrorCode.EXPIRED_TOKEN);
         }
     }
 
@@ -48,7 +47,7 @@ public class TokenService {
         final Long userId = jwtTokenProvider.getClaim(accessToken, "id", Long.class);
 
         if (userId == null) {
-            throw new BadRequestException(ErrorCode.INVALID_TOKEN);
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
         return userId;
@@ -59,14 +58,14 @@ public class TokenService {
         final Long userId = jwtTokenProvider.getClaim(refreshToken, "id", Long.class);
 
         if (userId == null) {
-            throw new BadRequestException(ErrorCode.INVALID_TOKEN);
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
         final Token token = tokenRepository.findByUserIdAndTokenAndType(userId, refreshToken, TokenType.REFRESH)
-            .orElseThrow(() -> new NotFoundException(ErrorCode.INVALID_TOKEN));
+            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
 
         if (token.getExpiresAt().isBefore(Instant.now())) {
-            throw new BadRequestException(ErrorCode.INVALID_TOKEN);
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
         return token;
@@ -76,11 +75,11 @@ public class TokenService {
         return jwtTokenProvider.resolveToken(request);
     }
 
-    public UserTokenPairDto createTokenPair(
+    public UserTokenDto createAccessAndRefreshToken(
         final Long userId,
         final Instant issuedAt
     ) {
-        return new UserTokenPairDto(
+        return new UserTokenDto(
             jwtTokenProvider.generateToken(TokenType.ACCESS, userId, issuedAt),
             jwtTokenProvider.generateToken(TokenType.REFRESH, userId, issuedAt)
         );
@@ -129,4 +128,5 @@ public class TokenService {
 
         tokenRepository.save(token);
     }
+
 }

@@ -1,4 +1,4 @@
-package com.user.security.jwt;
+package com.user.jwt;
 
 import com.user.security.CustomUserDetailService;
 import com.user.security.CustomUserDetails;

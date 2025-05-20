@@ -5,11 +5,11 @@ import com.storage.enums.TokenType;
 import com.storage.token.Token;
 import com.storage.token.TokenRepository;
 import com.storage.user.User;
+import com.user.exception.BusinessException;
 import com.user.fixture.UserFixture;
-import com.user.global.exception.BadRequestException;
-import com.user.security.jwt.JwtTokenProvider;
+import com.user.jwt.JwtTokenProvider;
 import com.user.service.TokenService;
-import com.user.web.response.UserTokenPairDto;
+import com.user.web.response.UserTokenDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -86,7 +86,7 @@ class TokenUnitTest {
         given(jwtTokenProvider.isParsable(invalidToken)).willReturn(false);
 
         // when, then
-        assertThrows(BadRequestException.class, () -> tokenService.validateJwtFormat(invalidToken));
+        assertThrows(BusinessException.class, () -> tokenService.validateJwtFormat(invalidToken));
     }
 
     @Test
@@ -97,7 +97,7 @@ class TokenUnitTest {
         given(jwtTokenProvider.getExpiration(expiredToken)).willReturn(new Date(System.currentTimeMillis() - 3600000));
 
         // when, then
-        assertThrows(BadRequestException.class, () -> tokenService.validateJwtExpiration(expiredToken));
+        assertThrows(BusinessException.class, () -> tokenService.validateJwtExpiration(expiredToken));
     }
 
     @Test
@@ -130,7 +130,7 @@ class TokenUnitTest {
         given(jwtTokenProvider.generateToken(TokenType.REFRESH, userId, issuedAt)).willReturn("refreshToken");
 
         // when
-        UserTokenPairDto result = tokenService.createTokenPair(userId, issuedAt);
+        UserTokenDto result = tokenService.createAccessAndRefreshToken(userId, issuedAt);
 
         // then
         assertAll(

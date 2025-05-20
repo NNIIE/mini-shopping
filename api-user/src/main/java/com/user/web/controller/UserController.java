@@ -1,7 +1,7 @@
 package com.user.web.controller;
 
 import com.storage.user.User;
-import com.user.security.CurrentUser;
+import com.user.principal.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -10,11 +10,10 @@ import com.storage.token.Token;
 import com.storage.token.TokenRepository;
 import com.storage.user.User;
 import com.storage.user.UserRepository;
-import com.user.global.exception.BadRequestException;
-import com.user.global.exception.NotFoundException;
-import com.user.security.jwt.JwtTokenProvider;
+import com.user.exception.BusinessException;
+import com.user.jwt.JwtTokenProvider;
 import com.user.service.TokenService;
-import com.user.web.response.UserTokenPairDto;
+import com.user.web.response.UserTokenDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -110,7 +109,7 @@ class TokenIntegrationTest {
         String invalidToken = "this.is.invalid.access.token";
 
         // when & then
-        assertThrows(BadRequestException.class, () -> tokenService.validateAccessTokenAndGetUserId(invalidToken));
+        assertThrows(BusinessException.class, () -> tokenService.validateAccessTokenAndGetUserId(invalidToken));
     }
 
     @Test
@@ -121,7 +120,7 @@ class TokenIntegrationTest {
         String expiredToken = jwtTokenProvider.generateToken(TokenType.ACCESS, testUser.getId(), expiredIssuedAt);
 
         // when & then
-        assertThrows(BadRequestException.class, () -> tokenService.validateAccessTokenAndGetUserId(expiredToken));
+        assertThrows(BusinessException.class, () -> tokenService.validateAccessTokenAndGetUserId(expiredToken));
     }
 
     @Test
@@ -149,7 +148,7 @@ class TokenIntegrationTest {
         );
 
         // when & then
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> tokenService.validateAndGetRefreshToken(nonExistentToken));
+        BusinessException exception = assertThrows(BusinessException.class, () -> tokenService.validateAndGetRefreshToken(nonExistentToken));
         assertThat(exception.getErrorCode().name()).isEqualTo("INVALID_TOKEN");
     }
 
@@ -171,7 +170,7 @@ class TokenIntegrationTest {
     @DisplayName("access-refresh 토큰 생성 성공")
     void createTokenPair() {
         // when
-        UserTokenPairDto tokenPair = tokenService.createTokenPair(testUser.getId(), Instant.now());
+        UserTokenDto tokenPair = tokenService.createAccessAndRefreshToken(testUser.getId(), Instant.now());
         Long userIdFromAccess = jwtTokenProvider.getClaim(tokenPair.accessToken(), "id", Long.class);
         Long userIdFromRefresh = jwtTokenProvider.getClaim(tokenPair.refreshToken(), "id", Long.class);
 

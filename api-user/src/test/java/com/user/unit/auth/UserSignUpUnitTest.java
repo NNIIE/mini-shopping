@@ -6,8 +6,8 @@ import com.storage.enums.AccountStatus;
 import com.storage.enums.UserRole;
 import com.storage.user.User;
 import com.storage.user.UserRepository;
+import com.user.exception.BusinessException;
 import com.user.fixture.UserFixture;
-import com.user.global.exception.ConflictException;
 import com.user.service.AuthService;
 import com.user.service.PasswordEncoder;
 import com.user.web.request.UserSignUpRequest;
@@ -99,7 +99,7 @@ public class UserSignUpUnitTest {
         when(accountRepository.findByEmail(anyString())).thenReturn(Optional.of(mockAccount));
 
         // when then
-        assertThrows(ConflictException.class, () -> authService.userSignUp(validSignUpRequest));
+        assertThrows(BusinessException.class, () -> authService.userSignUp(validSignUpRequest));
     }
 
     @Test
@@ -110,7 +110,7 @@ public class UserSignUpUnitTest {
         when(userRepository.findByNickname(anyString())).thenReturn(Optional.of(mockUser));
 
         // when then
-        assertThrows(ConflictException.class, () -> authService.userSignUp(validSignUpRequest));
+        assertThrows(BusinessException.class, () -> authService.userSignUp(validSignUpRequest));
     }
 
 }

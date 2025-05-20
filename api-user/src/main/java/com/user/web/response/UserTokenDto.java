@@ -1,6 +1,6 @@
 package com.user.web.response;
 
-public record UserTokenPairDto(
+public record UserTokenDto(
     String accessToken,
     String refreshToken
 ) {

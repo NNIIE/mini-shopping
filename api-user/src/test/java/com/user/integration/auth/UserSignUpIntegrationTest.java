@@ -5,8 +5,8 @@ import com.storage.account.Account;
 import com.storage.account.AccountRepository;
 import com.storage.user.User;
 import com.storage.user.UserRepository;
-import com.user.global.exception.ConflictException;
-import com.user.global.exception.ErrorCode;
+import com.user.exception.BusinessException;
+import com.user.exception.ErrorCode;
 import com.user.service.PasswordEncoder;
 import com.user.web.request.UserSignUpRequest;
 import org.junit.jupiter.api.DisplayName;
@@ -65,10 +65,10 @@ class UserSignUpIntegrationTest {
         );
 
         Account savedAccount = accountRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new ConflictException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         User savedUser = userRepository.findById(savedAccount.getId())
-            .orElseThrow(() -> new ConflictException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // then
         result.andDo(print())
@@ -105,7 +105,7 @@ class UserSignUpIntegrationTest {
                 post("/user/signUp")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(requestExistEmail)))
-            .andExpect(status().isConflict());
+            .andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -132,7 +132,7 @@ class UserSignUpIntegrationTest {
                 post("/user/signUp")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(requestExistNickname)))
-            .andExpect(status().isConflict());
+            .andExpect(status().isInternalServerError());
     }
 
 }

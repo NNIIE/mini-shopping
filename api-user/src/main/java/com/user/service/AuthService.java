@@ -2,20 +2,19 @@ package com.user.service;
 
 import com.storage.account.Account;
 import com.storage.account.AccountRepository;
-import com.storage.enums.AccountStatus;
 import com.storage.enums.DeviceType;
-import com.storage.enums.UserRole;
 import com.storage.token.Token;
 import com.storage.user.User;
 import com.storage.user.UserRepository;
-import com.user.global.exception.ConflictException;
-import com.user.global.exception.ErrorCode;
-import com.user.global.exception.NotFoundException;
+import com.user.domain.account.AccountFactory;
+import com.user.domain.user.UserFactory;
+import com.user.exception.BusinessException;
+import com.user.exception.ErrorCode;
 import com.user.web.request.ReissueTokenRequest;
 import com.user.web.request.UserSignInRequest;
 import com.user.web.request.UserSignUpRequest;
 import com.user.web.response.UserSignUpResponse;
-import com.user.web.response.UserTokenPairDto;
+import com.user.web.response.UserTokenDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,10 +32,16 @@ public class AuthService {
 
     @Transactional
     public UserSignUpResponse userSignUp(final UserSignUpRequest request) {
-        checkDuplicateEmail(request.getEmail());
-        checkDuplicateNickname(request.getNickname());
-        final Account savedAccount = createAccount(request);
-        final User savedUser = createUser(request, savedAccount);
+        accountRepository.findByEmail(request.getEmail()).ifPresent(account -> {
+            throw new BusinessException(ErrorCode.EMAIL_CONFLICT);
+        });
+
+        userRepository.findByNickname(request.getNickname()).ifPresent(user -> {
+            throw new BusinessException(ErrorCode.NICKNAME_CONFLICT);
+        });
+
+        final Account savedAccount = registerAccount(request);
+        final User savedUser = registerUser(request, savedAccount);
 
         return new UserSignUpResponse(
             savedUser.getId(),
@@ -46,10 +51,10 @@ public class AuthService {
     }
 
     @Transactional
-    public UserTokenPairDto signIn(final UserSignInRequest request) {
-        final User user = getUser(request);
+    public UserTokenDto signIn(final UserSignInRequest request) {
+        final User user = authenticateUser(request);
         final Instant now = Instant.now();
-        final UserTokenPairDto tokenResponse = tokenService.createTokenPair(user.getId(), now);
+        final UserTokenDto tokenResponse = tokenService.createAccessAndRefreshToken(user.getId(), now);
 
         tokenService.issueRefreshToken(
             user,
@@ -63,11 +68,11 @@ public class AuthService {
     }
 
     @Transactional
-    public UserTokenPairDto reissueAccessToken(final ReissueTokenRequest request) {
+    public UserTokenDto reissueAccessToken(final ReissueTokenRequest request) {
         final Token originRefreshToken = tokenService.validateAndGetRefreshToken(request.getRefreshToken());
         final User user = originRefreshToken.getUser();
         final Instant now = Instant.now();
-        final UserTokenPairDto tokenResponse = tokenService.createTokenPair(user.getId(), now);
+        final UserTokenDto tokenResponse = tokenService.createAccessAndRefreshToken(user.getId(), now);
 
         tokenService.rotateRefreshToken(
             originRefreshToken,
@@ -80,48 +85,34 @@ public class AuthService {
         return tokenResponse;
     }
 
-    private void checkDuplicateEmail(final String email) {
-        accountRepository.findByEmail(email).ifPresent(account -> {
-            throw new ConflictException(ErrorCode.EMAIL_CONFLICT);
-        });
+    public User authenticateUser(final UserSignInRequest request) {
+        final User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.verifyPassword(request.getPassword(), user.getAccount().getPassword())) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return user;
     }
 
-    private void checkDuplicateNickname(final String nickname) {
-        userRepository.findByNickname(nickname).ifPresent(user -> {
-            throw new ConflictException(ErrorCode.NICKNAME_CONFLICT);
-        });
-    }
-
-    private Account createAccount(final UserSignUpRequest request) {
-        final Account account = Account.builder()
-            .email(request.getEmail())
-            .password(passwordEncoder.encode(request.getPassword()))
-            .role(UserRole.BASIC)
-            .status(AccountStatus.ACTIVE)
-            .build();
+    private Account registerAccount(final UserSignUpRequest request) {
+        final Account account = AccountFactory.createUserAccountForSignUp(
+            request.getEmail(),
+            passwordEncoder.encode(request.getPassword())
+        );
 
         return accountRepository.save(account);
     }
 
-    private User createUser(final UserSignUpRequest request, final Account savedAccount) {
-        final User signUpUser = User.builder()
-            .account(savedAccount)
-            .nickname(request.getNickname())
-            .phoneNumber(request.getPhoneNumber())
-            .build();
+    private User registerUser(final UserSignUpRequest request, final Account savedAccount) {
+        final User signUpUser = UserFactory.createUserForSignUp(
+            savedAccount,
+            request.getNickname(),
+            request.getPhoneNumber()
+        );
 
         return userRepository.save(signUpUser);
-    }
-
-    private User getUser(final UserSignInRequest request) {
-        final User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
-
-        if (!passwordEncoder.verifyPassword(request.getPassword(), user.getAccount().getPassword())) {
-            throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
-        }
-
-        return user;
     }
 
 }

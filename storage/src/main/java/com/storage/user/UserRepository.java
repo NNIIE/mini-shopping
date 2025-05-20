@@ -1,5 +1,6 @@
 package com.storage.user;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -15,12 +16,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
            """)
     Optional<User> findByEmail(String email);
 
-    @Query("""
-            select u 
-            from User u 
-            join fetch u.account 
-            where u.id = :id
-            """)
+    @EntityGraph(attributePaths = "account")
     Optional<User> findById(Long id);
 
     Optional<User> findByNickname(String nickname);

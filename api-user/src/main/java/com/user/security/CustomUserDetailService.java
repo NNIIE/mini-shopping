@@ -2,8 +2,8 @@ package com.user.security;
 
 import com.storage.user.User;
 import com.storage.user.UserRepository;
-import com.user.global.exception.ErrorCode;
-import com.user.global.exception.NotFoundException;
+import com.user.exception.BusinessException;
+import com.user.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -17,10 +17,9 @@ public class CustomUserDetailService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(final String username) throws UsernameNotFoundException {
-            final Long userId = Long.parseLong(username);
-            final User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
+    public UserDetails loadUserByUsername(final String userId) throws UsernameNotFoundException {
+            final User user = userRepository.findById(Long.parseLong(userId))
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
             return new CustomUserDetails(user);
     }
