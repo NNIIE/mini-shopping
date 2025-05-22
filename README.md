@@ -14,3 +14,4 @@
 - [database](docs/study/database.md)
 - [security](docs/study/security.md)
 - [architecture](docs/study/architecture.md)
+- [devops](docs/study/devops.md)
