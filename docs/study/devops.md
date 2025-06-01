@@ -13,13 +13,14 @@
 | **모니터링** | - CloudWatch/X-Ray 기본  | - Prometheus, Grafana등의 오픈소스 <br>- CloudWatch 가능 | - CloudWatch Logs가 자동 통합 <br>- X-Ray 트레이싱이 내장 |
 | **배포전략** | - 롤링 업데이트가 기본 <br>-  Blue/Green은 CodeDeploy 연동 필요  | - 롤링, Blue/Green, 카나리 등 모든 전략이 네이티브로 지원 |버전/별칭/Weighted Alias, CodeDeploy |
 
-**컨트롤플레인:** 클러스터 및 서비스 상태, 배치, 오케스트레이션을 중앙에서 관리하는 핵심 관리 컴포넌트
-<br>
-**프로비저닝:** 사용자가 요청한 리소스(서버, 컨테이너, 함수 등)를 자동 또는 수동으로 생성/할당/준비하는 과정
-<br>
-**콜드스타트:** 서버리스 함수/컨테이너 서비스가 웜업 없ㅇ리 배포되어 첫 응답이 지연되는 현상
-<br>
-**하이브리드 배포:** 메인 서비스는 ECS/EKS 사용, 이벤트 처리/배치작업은 Lambda 사용
+- 컨트롤플레인: 클러스터 및 서비스 상태, 배치, 오케스트레이션을 중앙에서 관리하는 핵심 관리 컴포넌트
+- 프로비저닝: 사용자가 요청한 리소스(서버, 컨테이너, 함수 등)를 자동 또는 수동으로 생성/할당/준비하는 과정
+- 콜드스타트: 서버리스 함수/컨테이너 서비스가 웜업 없이 배포되어 첫 응답이 지연되는 현상
+- 하이브리드 배포: 메인 서비스는 ECS/EKS 사용, 이벤트 처리/배치작업은 Lambda 사용
+- 배포전략
+  - 롤링: 기존 Task를 점진적으로 새 버전으로 교체
+  - blue/green: 기존환경과 신규환경을 교체
+  - 카나리: 트래픽 일부만 신규환경에 먼저 보내고 이상 없으면 전체 전환
 
 <br>
 
@@ -32,48 +33,70 @@
 6. **응답 반환**
 
 ## Route53
-- AWS DNS 관리 서비스
+AWS DNS 완전관리형 서비스
 - 도메인 주소를 ALB/ELB 또는 CDN에 연결
 - 브라우저가 DNS 서버에 질의 → Route 53이 ALB/CloudFront의 IP 리턴
+- 헬스체크, 트래픽 라우팅, 가용성 기반 분산 등
 
 ## CloudFront
+AWS 글로벌 분산형 CDN
+- 사용자 콘텐츠 요청시 가까운 위치에서 빠르게 응답
 - 정적 콘텐츠: 캐싱되어 바로 반환
 - 동적 콘텐츠: ALB로 전달
 
 ## ALB
-트래픽 분산, 라우팅, SSL 종료
-- HTTP/HTTPS 요청을 받아 ECS Task들에게 분산
-- 경로 기반 라우팅
+AWS L7 기반 로드밸런서
+- 브라우저 -> ALB -> Target Group (ECS Task, EC2, Lambda) -> ECS Task 내부 컨테이너 (Spring)
+- 서브넷 분리
+  - Public: ALB
+  - Private: ECS Task
+- ECS에서 ALB 사용 시 동적 포트 매핑 필수
+- SSL/TSL 종료
+  - ALB에서 SSL 종료 후 ECS Task에는 HTTP로 전달
+- 헬스 체크
 - SSL 종단점 (HTTPS 종료)
-- ALB → Target Group → ECS Task
 - ALB / NLB
-	- ALB: HTTP/HTTPS 기반, 경로/호스트 기반 라우팅, 웹에 최적
-	- NLB: TCP/UDP 기반, 초고속, WebSocket 등 특수목적
+  - ALB (L7): HTTP/HTTPS 기반, 경로/호스트 기반 라우팅, 웹에 최적
+  - NLB (L4): TCP/UDP 기반, 초고속, WebSocket 등 특수목적
 
 ## ECS
-AWS의 컨테이너 오케스트레이션 서비스
-### ECS Launch Type
-- Fargate: 서버리스, 인프라 관리 X, 비용 조금 더 높음, 개발 편의성 좋음, 빠른 배포
-- EC2: 직접 인스턴스 관리, 세밀한 튜닝, 비용 효율적일 수 있음, 유지보수 부담
-### ECS Service    
+AWS 완전관리형 컨테이너 오케스트레이션 서비스
+<br>
+개발/운영 환경 차이 극복: 내 컴퓨터에선 잘돌아가는데.. 방지
+- ALB -> Target Group -> ECS Cluster -> ECS Service -> ECS Task
+
+#### Target Group
+각 ECS Task들이 타겟 그룹의 멤버로 등록
+- ALB에서 헬스체크, 트래픽 분배
+
+#### Cluster
+컨테이너들이 모여있는 논리적 집합
+
+#### Container
+어플리케이션, 라이브리러, 런타임 환경을 하나로 패키징 해서 어디서든 실행 가능한 단위
+
+#### Launch Type (컨테이너 실행 방식)
+- EC2 Launch Type
+  - 직접 EC2 인스턴스를 클러스터로 묶고 거기에 컨테이너(Task) 올림
+  - 인스턴스 수동 관리 
+- Fargate Launch Type
+  - 서버리스 컨테이너
+  - 인스턴스 신경 X, Task 정의만으로 바로 실행
+
+#### ECS Service    
 하나의 백엔드 마이크로서비스(예: ProductService) 관리
 - 원하는 Task 수를 유지
 - 오토스케일링 설정 가능
-### ECS Task
-실제로 실행되는 컨테이너 인스턴스(예: product-api)
+
+#### ECS Task
+Task Definition 대로 실제 실행되는 컨테이너 인스턴스
 - 보통 1 Task - 1 컨테이너 패턴
 - RDS, ElastiCache 등 다른 AWS 리소스와 통신
-	- 보통 VPC 내에서 Private Subnet을 사용
-### ALB Target Group
-각 ECS Task들이 타겟 그룹의 멤버로 등록
-- ALB에서 헬스체크, 트래픽 분배
-### Task Definition
+- 보통 VPC 내에서 Private Subnet을 사용
 
-<br>
-
-# 통신
-### SSL
-### HTTPS
+#### Task Definition
+컨테이너를 어떻게 실행할지 정의하는 JSON 템플릿
+- 실행에 필요한 모든 설정 (도커 이미지, 환경변수, 포트 등)을 명시
 
 <br>
 
@@ -86,15 +109,15 @@ AWS의 독립적인 네트워크 공간
 ### Subnet
 VPC 내에서 리소스를 가용 영역 단위로 분리하기 위해 도입
 - public
-	- 인터넷에서 직접 접근 가능(로드밸런서, Bastion Host 등)
-    - 라우트 테이블에 엔트리 포함
-    - 직접적인 인터넷 접근 가능
-    - 퍼블릭 IP 또는 EIP를 할당하면 외부와 양방향 통신 가능
+  - 인터넷에서 직접 접근 가능(로드밸런서, Bastion Host 등)
+  - 라우트 테이블에 엔트리 포함
+  - 직접적인 인터넷 접근 가능
+  - 퍼블릭 IP 또는 EIP를 할당하면 외부와 양방향 통신 가능
 - private
-	- 인터넷에서 직접 접근 불가(ECS Task, DB 등 내부 서비스)
-    - 라우트 테이블에 게이트웨이 경로 X
-    - 외부로부터 직접 접근 차단
-    - 외부연결이 필요하면 NAT Gateway 경유
+  - 인터넷에서 직접 접근 불가(ECS Task, DB 등 내부 서비스)
+  - 라우트 테이블에 게이트웨이 경로 X
+  - 외부로부터 직접 접근 차단
+  - 외부연결이 필요하면 NAT Gateway 경유
 ### IGW (Internet Gateway)
 - VPC 리소스에 퍼블릭 인터넷을 연결하기 위해 도입된 완전 관리형 컴포넌트
 ### NAT Gateway
@@ -111,9 +134,13 @@ Private Subnet의 ECS Task가 인터넷(예: DockerHub, S3 등)에 접근하려�
     - Inbound: ECS Task의 보안그룹만 허용 (최소 권한 원칙)
     - Outbound: 필요시 제한
 
-
 <br>
 
+# 통신
+### SSL/TSL
+### HTTPS
+
+<br>
 
 # CI / CD
 
