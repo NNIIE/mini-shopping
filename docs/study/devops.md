@@ -38,6 +38,14 @@
 | **비용** | - CodePipeline: 월 1개 파이프라인 무료 <br>- CodeBuild: 월 빌드시간 100분 무료 | - Public: 완전 무료 <br>- Private: 월 2000분 무료 | 오픈소스 (무료) |
 | **롤백** | - 이전 Task Definition 버전 기반 수동 롤백 <br>- 블루/그린 배포시 실패 자동롤백 지원 <br>- 파이프라인 스테이지단위 롤백은 직접 추가 | - Git 버전관리 기반 롤백 <br>- yaml로 롤백/백업/재배포 등을 코드로 관리 | - 빌드 번호 기반 관리 <br>- 운영상 모든 시나리오 직접 스크립트작성으로 제어 가능 <br>- 모든 로직을 직접 설계해야 함 |
 
+
+<br>
+
+
+# 다이어 그램
+![ecs drawio (1)](https://github.com/user-attachments/assets/2ac35b7b-f167-446a-aae4-1f8bde4c4694)
+
+
 <br>
 
 
@@ -71,7 +79,6 @@ AWS L7 기반 로드밸런서
 - SSL/TSL 종료
   - ALB에서 SSL 종료 후 ECS Task에는 HTTP로 전달
 - 헬스 체크
-- SSL 종단점 (HTTPS 종료)
 - ALB / NLB
   - ALB (L7): HTTP/HTTPS 기반, 경로/호스트 기반 라우팅, 웹에 최적
   - NLB (L4): TCP/UDP 기반, 초고속, WebSocket 등 특수목적
@@ -140,6 +147,11 @@ VPC 내에서 서브넷을 여러개로 쪼개면 트래픽 분산, 보안강화
   - 외부에서 직접 접근 불가(ECS Task, DB 등 내부 서비스)
   - 외부연결이 필요하면 NAT Gateway 경유
     - NAT Gateway 등을 통해 제한적으로 외부와 통신
+   
+### ECR (Elastic Container Registry)
+컨테이너 이미지를 저장, 관리, 배포 하는 저장소
+- S3를 기반으로 이미지 저장
+- IAM 기반 인증/권한 부여
 
 ### IGW (Internet Gateway)
 VPC와 인터넷 사이의 통신을 가능하게 하는 컴포넌트
@@ -189,9 +201,4 @@ HTTP + TLS/SSL
 - TLS/SSL 위에서 동작하는 프로토콜
 - ACM에서 무료 인증서 발급하고 ALB에 붙이면 HTTPS 자동 지원
 
-
-<br>
-
-
-# 다이어 그램
 
