@@ -40,7 +40,7 @@ jobs:
         with:
           task-definition: task-definition.json
           container-name: api-user # 실제 task definition에 정의된 이름
-          image: ${{ steps.login-ecr.outputs.registry }}/my-app-repo:${{ github.sha }}
+          image: ${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-user:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
