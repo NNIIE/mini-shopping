@@ -40,18 +40,18 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       # api-admin 이미지 빌드 및 푸시
-      - name: Build and push api-admin Docker image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: mini-shopping/api-admin
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          echo "Building api-admin image..."
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f api-admin/Dockerfile .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "Tagging as latest..."
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+#      - name: Build and push api-admin Docker image
+#        env:
+#          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+#          ECR_REPOSITORY: mini-shopping/api-admin
+#          IMAGE_TAG: ${{ github.sha }}
+#        run: |
+#          echo "Building api-admin image..."
+#          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f api-admin/Dockerfile .
+#          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+#          echo "Tagging as latest..."
+#          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+#          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       # AWS에서 현재 api-user 태스크 정의 가져오기
       - name: Download current api-user task definition
@@ -81,28 +81,28 @@ jobs:
           wait-for-service-stability: true
 
       # AWS에서 현재 api-admin 태스크 정의 가져오기
-      - name: Download current api-admin task definition
-        run: |
-          aws ecs describe-task-definition \
-            --task-definition api-admin-task \
-            --query taskDefinition > task-definition-admin.json
-          echo "Current task definition:"
-          cat task-definition-admin.json
+#      - name: Download current api-admin task definition
+#        run: |
+#          aws ecs describe-task-definition \
+#            --task-definition api-admin-task \
+#            --query taskDefinition > task-definition-admin.json
+#          echo "Current task definition:"
+#          cat task-definition-admin.json
 
       # api-admin 태스크 정의 업데이트
-      - name: Update api-admin task definition
-        id: task-def-admin
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-definition-admin.json
-          container-name: api-admin
-          image: ${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-admin:${{ github.sha }}
+#      - name: Update api-admin task definition
+#        id: task-def-admin
+#        uses: aws-actions/amazon-ecs-render-task-definition@v1
+#        with:
+#          task-definition: task-definition-admin.json
+#          container-name: api-admin
+#          image: ${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-admin:${{ github.sha }}
 
       # api-admin 서비스 배포
-      - name: Deploy api-admin to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def-admin.outputs.task-definition }}
-          service: api-admin-service
-          cluster: mini-shopping-cluster
-          wait-for-service-stability: true
+#      - name: Deploy api-admin to ECS
+#        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+#        with:
+#          task-definition: ${{ steps.task-def-admin.outputs.task-definition }}
+#          service: api-admin-service
+#          cluster: mini-shopping-cluster
+#          wait-for-service-stability: true
