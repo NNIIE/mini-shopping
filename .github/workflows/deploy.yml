@@ -31,7 +31,7 @@ jobs:
           ECR_REPOSITORY: mini-shopping/api-user  # ECR 저장소 이름
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f api-user/Dockerfile ./api-user
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f api-user/Dockerfile .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Fill in the new image ID in the ECS task definition
