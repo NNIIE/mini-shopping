@@ -1,0 +1,60 @@
+name: aws ecs github actions cicd
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECS_CLUSTER: mini-shopping-cluster
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build and push api-admin image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $ECR_REGISTRY/mini-shopping/api-admin:$IMAGE_TAG -f api-admin/Dockerfile .
+        docker push $ECR_REGISTRY/mini-shopping/api-admin:$IMAGE_TAG
+        docker tag $ECR_REGISTRY/mini-shopping/api-admin:$IMAGE_TAG $ECR_REGISTRY/mini-shopping/api-admin:latest
+        docker push $ECR_REGISTRY/mini-shopping/api-admin:latest
+
+    - name: Build and push api-user image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $ECR_REGISTRY/mini-shopping/api-user:$IMAGE_TAG -f api-user/Dockerfile .
+        docker push $ECR_REGISTRY/mini-shopping/api-user:$IMAGE_TAG
+        docker tag $ECR_REGISTRY/mini-shopping/api-user:$IMAGE_TAG $ECR_REGISTRY/mini-shopping/api-user:latest
+        docker push $ECR_REGISTRY/mini-shopping/api-user:latest
+
+    - name: Update api-admin service
+      run: |
+        aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service api-admin-service --force-new-deployment
+
+    - name: Update api-user service
+      run: |
+        aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service api-user-service --force-new-deployment
+
+
+
