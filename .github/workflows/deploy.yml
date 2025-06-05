@@ -1,129 +1,51 @@
-name: Deploy to AWS ECS
+name: Deploy to ECS
 
-# main 브랜치에 push되거나 PR이 머지될 때 실행됩니다
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-    types: [ closed ]
-
-# 환경 변수를 정의합니다
-env:
-  AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY_ADMIN: mini-shopping/api-admin
-  ECR_REPOSITORY_USER: mini-shopping/api-user
-  ECS_CLUSTER: mini-shopping-cluster
-  ECS_SERVICE_ADMIN: api-admin-service
-  ECS_SERVICE_USER: api-user-service
-  TASK_DEFINITION_ADMIN: api-admin-task
-  TASK_DEFINITION_USER: api-user-task
+    branches:
+      - main  # main 브랜치 푸시 시 트리거
 
 jobs:
   deploy:
-    name: Deploy to ECS
+    name: Deploy to Amazon ECS
     runs-on: ubuntu-latest
-    # PR이 머지되었을 때만 실행하거나, 직접 push했을 때 실행
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
 
     steps:
-    # 1. 코드 체크아웃
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # 2. AWS 자격 증명 설정
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
 
-    # 3. ECR 로그인
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-    # 4. Docker 이미지 빌드 및 푸시 (api-admin)
-    - name: Build and push api-admin image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        echo "Building api-admin image..."
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_ADMIN:$IMAGE_TAG -f api-admin/Dockerfile .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY_ADMIN:$IMAGE_TAG
-        echo "Pushing latest tag..."
-        docker tag $ECR_REGISTRY/$ECR_REPOSITORY_ADMIN:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY_ADMIN:latest
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY_ADMIN:latest
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: mini-shopping/api-user  # ECR 저장소 이름
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-    # 5. Docker 이미지 빌드 및 푸시 (api-user)
-    - name: Build and push api-user image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        echo "Building api-user image..."
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_USER:$IMAGE_TAG -f api-user/Dockerfile .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY_USER:$IMAGE_TAG
-        echo "Pushing latest tag..."
-        docker tag $ECR_REGISTRY/$ECR_REPOSITORY_USER:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY_USER:latest
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY_USER:latest
+      - name: Fill in the new image ID in the ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: api-user # 실제 task definition에 정의된 이름
+          image: ${{ steps.login-ecr.outputs.registry }}/my-app-repo:${{ github.sha }}
 
-    # 6. 현재 태스크 정의 가져오기 (api-admin)
-    - name: Download current task definition for api-admin
-      run: |
-        aws ecs describe-task-definition \
-          --task-definition ${{ env.TASK_DEFINITION_ADMIN }} \
-          --query taskDefinition > task-definition-admin.json
-
-    # 7. 새 이미지 ID로 태스크 정의 업데이트 (api-admin)
-    - name: Update api-admin task definition
-      id: task-def-admin
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: task-definition-admin.json
-        container-name: api-admin
-        image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_ADMIN }}:${{ github.sha }}
-
-    # 8. 현재 태스크 정의 가져오기 (api-user)
-    - name: Download current task definition for api-user
-      run: |
-        aws ecs describe-task-definition \
-          --task-definition ${{ env.TASK_DEFINITION_USER }} \
-          --query taskDefinition > task-definition-user.json
-
-    # 9. 새 이미지 ID로 태스크 정의 업데이트 (api-user)
-    - name: Update api-user task definition
-      id: task-def-user
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: task-definition-user.json
-        container-name: api-user
-        image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_USER }}:${{ github.sha }}
-
-    # 10. ECS 서비스 업데이트 (api-admin)
-    - name: Deploy api-admin to ECS
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      with:
-        task-definition: ${{ steps.task-def-admin.outputs.task-definition }}
-        service: ${{ env.ECS_SERVICE_ADMIN }}
-        cluster: ${{ env.ECS_CLUSTER }}
-        wait-for-service-stability: true
-
-    # 11. ECS 서비스 업데이트 (api-user)
-    - name: Deploy api-user to ECS
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      with:
-        task-definition: ${{ steps.task-def-user.outputs.task-definition }}
-        service: ${{ env.ECS_SERVICE_USER }}
-        cluster: ${{ env.ECS_CLUSTER }}
-        wait-for-service-stability: true
-
-    # 12. 배포 완료 알림
-    - name: Deployment completed
-      run: |
-        echo "🎉 Deployment completed successfully!"
-        echo "Admin service: ${{ env.ECS_SERVICE_ADMIN }}"
-        echo "User service: ${{ env.ECS_SERVICE_USER }}"
-        echo "Commit SHA: ${{ github.sha }}"
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: api-user-service  # ECS 서비스명
+          cluster: mini-shopping-cluster  # ECS 클러스터명
+          wait-for-service-stability: true
