@@ -39,20 +39,6 @@ jobs:
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      # api-admin 이미지 빌드 및 푸시
-#      - name: Build and push api-admin Docker image
-#        env:
-#          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-#          ECR_REPOSITORY: mini-shopping/api-admin
-#          IMAGE_TAG: ${{ github.sha }}
-#        run: |
-#          echo "Building api-admin image..."
-#          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f api-admin/Dockerfile .
-#          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-#          echo "Tagging as latest..."
-#          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-#          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
       # AWS에서 현재 api-user 태스크 정의 가져오기
       - name: Download current api-user task definition
         run: |
@@ -80,6 +66,22 @@ jobs:
           service: api-user-service
           cluster: mini-shopping-cluster
           wait-for-service-stability: true
+
+
+      # api-admin 이미지 빌드 및 푸시
+#      - name: Build and push api-admin Docker image
+#        env:
+#          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+#          ECR_REPOSITORY: mini-shopping/api-admin
+#          IMAGE_TAG: ${{ github.sha }}
+#        run: |
+#          echo "Building api-admin image..."
+#          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f api-admin/Dockerfile .
+#          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+#          echo "Tagging as latest..."
+#          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+#          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
 
       # AWS에서 현재 api-admin 태스크 정의 가져오기
 #      - name: Download current api-admin task definition
