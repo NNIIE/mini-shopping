@@ -58,7 +58,8 @@ jobs:
         run: |
           aws ecs describe-task-definition \
             --task-definition api-user-task \
-            --query taskDefinition > task-definition-user.json
+            --query taskDefinition \
+            | jq 'del(.enableFaultInjection)' > task-definition-user.json
           echo "Current task definition:"
           cat task-definition-user.json
 
