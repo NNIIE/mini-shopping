@@ -47,7 +47,8 @@ public class SecurityConfig {
                 "/",
                 "/user/signUp",
                 "/user/signIn",
-                "/user/reissueToken"
+                "/user/reissueToken",
+                "/user/actuator/health"
             ).permitAll()
             .anyRequest()
             .authenticated();

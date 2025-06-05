@@ -22,9 +22,7 @@ public class GlobalExceptionHandler {
             ex.getMessage(), request.getRequestURI());
 
         final ExceptionResponse response = new ExceptionResponse(
-            INTERNAL_SERVER_ERROR.value(),
-            "Internal Server Error",
-            ex.getMessage()
+            INTERNAL_SERVER_ERROR.value()
         );
 
         return ResponseEntity
@@ -35,9 +33,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ExceptionResponse> handleCustomException(final CustomException ex) {
         final ExceptionResponse response = new ExceptionResponse(
-            ex.getErrorCode().getStatus().value(),
-            ex.getErrorCode().name(),
-            ex.getMessage()
+            ex.getErrorCode().getStatus().value()
         );
 
         return ResponseEntity
