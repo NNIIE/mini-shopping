@@ -2,20 +2,82 @@ name: Deploy to ECS
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  deploy:
-    name: Deploy to Amazon ECS
+  # ----------- [1] api-user 빌드/배포 병렬 Job -----------
+  deploy-api-user:
+    name: Build and Deploy api-user
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4  # 소스코드 체크아웃
 
-      - name: Build all modules
-        run: ./gradlew clean build -x test
+      # api-user 모듈만 빌드(Jar 생성, 테스트는 생략)
+      - name: Build api-user only
+        run: ./gradlew :api-user:bootJar -x test
+
+      # AWS 인증 설정 (IAM 접근키, 시크릿키)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      # ECR 로그인
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Docker 이미지 빌드 및 ECR 푸시
+      - name: Build and push api-user Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: mini-shopping/api-user
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f api-user/Dockerfile .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      # 기존 ECS 태스크 정의 내려받기 (변경 준비)
+      - name: Download current api-user task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition api-user-task \
+            --query taskDefinition \
+            | jq 'del(.enableFaultInjection)' > task-definition-user.json
+          cat task-definition-user.json
+
+      # 이미지 태그만 새 값으로 바꿔서 task definition 렌더링
+      - name: Update api-user task definition
+        id: task-def-user
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition-user.json
+          container-name: api-user
+          image: ${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-user:${{ github.sha }}
+
+      # ECS 서비스에 신규 태스크 정의로 배포
+      - name: Deploy api-user to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def-user.outputs.task-definition }}
+          service: api-user-service
+          cluster: mini-shopping-cluster
+          wait-for-service-stability: true
+
+  # ----------- [2] api-admin 빌드/배포 병렬 Job -----------
+  deploy-api-admin:
+    name: Build and Deploy api-admin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # api-admin 모듈만 빌드(Jar 생성, 테스트 생략)
+      - name: Build api-admin only
+        run: ./gradlew :api-admin:bootJar -x test
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -28,75 +90,25 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # api-user 이미지 빌드 및 푸시
-      - name: Build and push api-user Docker image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: mini-shopping/api-user
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          echo "Building api-user image..."
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f api-user/Dockerfile .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "Tagging as latest..."
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-      # AWS에서 현재 api-user 태스크 정의 가져오기
-      - name: Download current api-user task definition
-        run: |
-          aws ecs describe-task-definition \
-            --task-definition api-user-task \
-            --query taskDefinition \
-            | jq 'del(.enableFaultInjection)' > task-definition-user.json
-          echo "Current task definition:"
-          cat task-definition-user.json
-
-      # api-user 태스크 정의 업데이트
-      - name: Update api-user task definition
-        id: task-def-user
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-definition-user.json
-          container-name: api-user
-          image: ${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-user:${{ github.sha }}
-
-      # api-user 서비스 배포
-      - name: Deploy api-user to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def-user.outputs.task-definition }}
-          service: api-user-service
-          cluster: mini-shopping-cluster
-          wait-for-service-stability: true
-
-
-      # api-admin 이미지 빌드 및 푸시
       - name: Build and push api-admin Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: mini-shopping/api-admin
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "Building api-admin image..."
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f api-admin/Dockerfile .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "Tagging as latest..."
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-
-      # AWS에서 현재 api-admin 태스크 정의 가져오기
       - name: Download current api-admin task definition
         run: |
           aws ecs describe-task-definition \
             --task-definition api-admin-task \
             --query taskDefinition \
             | jq 'del(.enableFaultInjection)' > task-definition-admin.json
-          echo "Current task definition:"
           cat task-definition-admin.json
 
-      # api-admin 태스크 정의 업데이트
       - name: Update api-admin task definition
         id: task-def-admin
         uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -105,7 +117,6 @@ jobs:
           container-name: api-admin
           image: ${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-admin:${{ github.sha }}
 
-      # api-admin 서비스 배포
       - name: Deploy api-admin to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
