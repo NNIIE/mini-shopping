@@ -47,6 +47,7 @@ public class SecurityConfig {
 
     private void configureAuthorizeRequests(final AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
         auth.requestMatchers(
+                "/admin/actuator/health",
                 "/admin/signIn",
                 "/admin/signUp"
             ).permitAll()

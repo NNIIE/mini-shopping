@@ -10,7 +10,6 @@ import com.storage.account.AccountRepository;
 import com.storage.admin.Admin;
 import com.storage.admin.AdminRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +20,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AccountRepository accountRepository;
     private final AdminRepository adminRepository;
-    private final AuthenticationManager authenticationManager;
 
     @Transactional
     public AdminSignUpResponse adminSignUp(final AdminSignUpRequest request) {
