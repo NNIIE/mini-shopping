@@ -7,11 +7,17 @@ import com.admin.web.request.brand.UpdateBrandRequest;
 import com.admin.web.response.brand.BrandResponse;
 import com.storage.admin.Admin;
 import com.storage.brand.Brand;
+import com.support.response.PagedResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,6 +25,27 @@ import org.springframework.web.bind.annotation.*;
 public class BrandController {
 
     private final BrandService brandService;
+
+    @GetMapping
+    public ResponseEntity<PagedResponse<BrandResponse>> getBrands(
+        @CurrentAdmin final Admin admin,
+        @PageableDefault final Pageable pageable
+    ) {
+        final Page<Brand> pages = brandService.getMyBrands(admin, pageable);
+        final List<BrandResponse> brandResponses = pages.stream()
+            .map(brand -> new BrandResponse(brand.getId(), brand.getName()))
+            .toList();
+
+        final PagedResponse<BrandResponse> response = new PagedResponse<>(
+            brandResponses,
+            pages.getTotalPages(),
+            pages.getTotalElements(),
+            pages.getNumber(),
+            pages.getSize()
+        );
+
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<BrandResponse> getBrand(@PathVariable final Long id) {

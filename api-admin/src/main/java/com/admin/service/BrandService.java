@@ -8,6 +8,8 @@ import com.storage.admin.Admin;
 import com.storage.brand.Brand;
 import com.storage.brand.BrandRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class BrandService {
 
     private final BrandRepository brandRepository;
+
+    @Transactional(readOnly = true)
+    public Page<Brand> getMyBrands(final Admin admin, final Pageable pageable) {
+        return brandRepository.findByAdminId(admin.getId(), pageable);
+    }
 
     @Transactional(readOnly = true)
     public Brand getBrand(final Long id) {
