@@ -1,4 +1,4 @@
-package com.admin.global.exception;
+package com.admin.exception;
 
 import com.support.response.ExceptionResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,11 +18,11 @@ public class GlobalExceptionHandler {
         final Exception ex,
         final HttpServletRequest request
     ) {
-        log.error("Runtime exception: {}, URI: {}",
+        log.error("Server Error: {}, URI: {}",
             ex.getMessage(), request.getRequestURI());
 
         final ExceptionResponse response = new ExceptionResponse(
-            INTERNAL_SERVER_ERROR.value()
+            ErrorCode.INTERNAL_SERVER_ERROR.getCode()
         );
 
         return ResponseEntity
@@ -30,14 +30,17 @@ public class GlobalExceptionHandler {
             .body(response);
     }
 
-    @ExceptionHandler(CustomException.class)
-    public ResponseEntity<ExceptionResponse> handleCustomException(final CustomException ex) {
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ExceptionResponse> handleBusinessException(
+        final BusinessException ex,
+        final HttpServletRequest request
+    ) {
         final ExceptionResponse response = new ExceptionResponse(
-            ex.getErrorCode().getStatus().value()
+            ex.getErrorCode().getCode()
         );
 
         return ResponseEntity
-            .status(ex.getErrorCode().getStatus())
+            .status(INTERNAL_SERVER_ERROR)
             .body(response);
     }
 

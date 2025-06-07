@@ -1,8 +1,7 @@
 package com.admin.integration;
 
 import com.admin.fixture.AdminFixture;
-import com.admin.global.exception.ConflictException;
-import com.admin.global.exception.ErrorCode;
+import com.admin.exception.ErrorCode;
 import com.admin.service.PasswordEncoder;
 import com.admin.web.request.AdminSignUpRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -1,4 +1,4 @@
-package com.admin.global.config;
+package com.admin.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,7 +30,7 @@ public class SecurityConfig {
 
     private void configureAuthorizeRequests(final AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
         auth.requestMatchers(
-                "/admin/actuator/health"
+                "/admin/**"             // 관리자 모듈은 추후 세션 인증 구현
             ).permitAll()
             .anyRequest()
             .authenticated();

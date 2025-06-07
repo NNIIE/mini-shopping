@@ -19,7 +19,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("")
+    @PostMapping("/signUp")
     public ResponseEntity<AdminSignUpResponse> adminSignUp(@RequestBody @Valid final AdminSignUpRequest request) {
         final AdminSignUpResponse response = authService.adminSignUp(request);
 
