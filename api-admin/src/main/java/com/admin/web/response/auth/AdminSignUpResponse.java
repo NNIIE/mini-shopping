@@ -1,4 +1,4 @@
-package com.admin.web.response;
+package com.admin.web.response.auth;
 
 public record AdminSignUpResponse(
     Long id,

@@ -2,9 +2,9 @@ package com.admin.web.controller;
 
 import com.admin.security.AuthenticationSessionManager;
 import com.admin.service.AuthService;
-import com.admin.web.request.AdminSignInRequest;
-import com.admin.web.request.AdminSignUpRequest;
-import com.admin.web.response.AdminSignUpResponse;
+import com.admin.web.request.auth.AdminSignInRequest;
+import com.admin.web.request.auth.AdminSignUpRequest;
+import com.admin.web.response.auth.AdminSignUpResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

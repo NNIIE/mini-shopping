@@ -4,7 +4,7 @@ import com.admin.exception.BusinessException;
 import com.admin.fixture.AdminFixture;
 import com.admin.exception.ErrorCode;
 import com.admin.service.PasswordEncoder;
-import com.admin.web.request.AdminSignUpRequest;
+import com.admin.web.request.auth.AdminSignUpRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.storage.account.Account;
 import com.storage.account.AccountRepository;

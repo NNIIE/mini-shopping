@@ -1,8 +1,8 @@
 package com.admin.integration;
 
 import com.admin.fixture.AdminFixture;
-import com.admin.web.request.AdminSignInRequest;
-import com.admin.web.request.AdminSignUpRequest;
+import com.admin.web.request.auth.AdminSignInRequest;
+import com.admin.web.request.auth.AdminSignUpRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;

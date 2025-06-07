@@ -1,8 +1,9 @@
 package com.admin.fixture;
 
-import com.admin.web.request.AdminSignInRequest;
-import com.admin.web.request.AdminSignUpRequest;
+import com.admin.web.request.auth.AdminSignInRequest;
+import com.admin.web.request.auth.AdminSignUpRequest;
 import com.storage.account.Account;
+import com.storage.admin.Admin;
 import com.storage.enums.AccountStatus;
 import com.storage.enums.UserRole;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -19,6 +20,13 @@ public class AdminFixture {
             .role(UserRole.ADMIN)
             .status(AccountStatus.ACTIVE)
             .build();
+    }
+
+    public static Admin createAdminWithAnId() {
+        Admin admin = new Admin(createAdminAccount());
+        ReflectionTestUtils.setField(admin, "id", 1L);
+
+        return admin;
     }
 
     public static AdminSignUpRequest createRequestForAdminSignUp() {
