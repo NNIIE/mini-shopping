@@ -1,18 +1,23 @@
 package com.admin.config;
 
+import com.admin.security.CustomAdminDetailService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final CustomAdminDetailService customAdminDetailService;
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
@@ -20,20 +25,33 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
+    public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
+        AuthenticationManagerBuilder builder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        builder.userDetailsService(customAdminDetailService).passwordEncoder(bCryptPasswordEncoder());
+        return builder.build();
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(this::configureAuthorizeRequests);       // 일단 헬스체크만
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) // 필요시 세션 생성 (기본값)
+            )
+            .authorizeHttpRequests(this::configureAuthorizeRequests)
+            .formLogin(AbstractHttpConfigurer::disable)
+            .userDetailsService(customAdminDetailService);
 
         return http.build();
     }
 
     private void configureAuthorizeRequests(final AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
         auth.requestMatchers(
-                "/admin/**"             // 관리자 모듈은 추후 세션 인증 구현
+                "/admin/signIn",
+                "/admin/signUp"
             ).permitAll()
-            .anyRequest()
-            .authenticated();
+            .requestMatchers("/admin/**").hasRole("ADMIN")
+            .anyRequest().authenticated();
     }
 
 }

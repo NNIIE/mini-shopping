@@ -1,8 +1,11 @@
 package com.admin.web.controller;
 
+import com.admin.security.AuthenticationSessionManager;
 import com.admin.service.AuthService;
+import com.admin.web.request.AdminSignInRequest;
 import com.admin.web.request.AdminSignUpRequest;
 import com.admin.web.response.AdminSignUpResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,12 +15,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin")
 public class AuthController {
 
     private final AuthService authService;
+    private final AuthenticationSessionManager authenticationSessionManager;
 
     @PostMapping("/signUp")
     public ResponseEntity<AdminSignUpResponse> adminSignUp(@RequestBody @Valid final AdminSignUpRequest request) {
@@ -26,6 +31,20 @@ public class AuthController {
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(response);
+    }
+
+    @PostMapping("/signIn")
+    public ResponseEntity<String> adminSignIn(
+        @RequestBody @Valid final AdminSignInRequest request,
+        final HttpServletRequest httpRequest
+    ) {
+        final String sessionId = authenticationSessionManager.authenticateAdmin(
+            request.getEmail(),
+            request.getPassword(),
+            httpRequest
+        );
+
+        return ResponseEntity.ok(sessionId);
     }
 
 }

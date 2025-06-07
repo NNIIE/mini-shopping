@@ -34,7 +34,7 @@ public class AuthController {
     public ResponseEntity<UserTokenDto> signIn(
         @RequestBody @Valid final UserSignInRequest userSignInRequest
     ) {
-        UserTokenDto response = authService.signIn(userSignInRequest);
+        final UserTokenDto response = authService.signIn(userSignInRequest);
 
         return ResponseEntity
             .status(HttpStatus.OK)

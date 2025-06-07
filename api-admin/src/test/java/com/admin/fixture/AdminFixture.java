@@ -1,5 +1,6 @@
 package com.admin.fixture;
 
+import com.admin.web.request.AdminSignInRequest;
 import com.admin.web.request.AdminSignUpRequest;
 import com.storage.account.Account;
 import com.storage.enums.AccountStatus;
@@ -30,6 +31,14 @@ public class AdminFixture {
 
     public static AdminSignUpRequest createRequestForAdminSignUpParameter(final String email, final String password) {
         AdminSignUpRequest request = new AdminSignUpRequest();
+        ReflectionTestUtils.setField(request, "email", email);
+        ReflectionTestUtils.setField(request, "password", password);
+
+        return request;
+    }
+
+    public static AdminSignInRequest createRequestForAdminSignIn(final String email, final String password) {
+        AdminSignInRequest request = new AdminSignInRequest();
         ReflectionTestUtils.setField(request, "email", email);
         ReflectionTestUtils.setField(request, "password", password);
 

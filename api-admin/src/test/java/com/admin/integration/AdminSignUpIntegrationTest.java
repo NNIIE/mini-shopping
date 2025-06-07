@@ -1,5 +1,6 @@
 package com.admin.integration;
 
+import com.admin.exception.BusinessException;
 import com.admin.fixture.AdminFixture;
 import com.admin.exception.ErrorCode;
 import com.admin.service.PasswordEncoder;
@@ -65,10 +66,10 @@ class AdminSignUpIntegrationTest {
 
 
         Account savedAccount = accountRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new ConflictException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         Admin savedAdmin = adminRepository.findById(savedAccount.getId())
-            .orElseThrow(() -> new ConflictException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // then
         result.andDo(print())
