@@ -26,9 +26,7 @@ public class BrandService {
 
     @Transactional(readOnly = true)
     public Brand getBrand(final Long id) {
-        return brandRepository.findById(id).orElseThrow(
-            () -> new BusinessException(ErrorCode.BRAND_NOT_FOUND)
-        );
+        return getBrandById(id);
     }
 
     @Transactional
@@ -62,6 +60,12 @@ public class BrandService {
         brandRepository.delete(brand);
 
         return brand;
+    }
+
+    public Brand getBrandById(final Long id) {
+        return brandRepository.findById(id).orElseThrow(
+            () -> new BusinessException(ErrorCode.BRAND_NOT_FOUND)
+        );
     }
 
     public void checkBrandNameDuplication(final String brandName) {
