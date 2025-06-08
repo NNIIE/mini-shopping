@@ -6,6 +6,8 @@ import com.admin.web.request.product.UpdateProductRequest;
 import com.admin.web.response.product.ProductResponse;
 import com.storage.product.Product;
 import com.support.response.PagedResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,11 +22,13 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/product")
+@Tag(name = "Product", description = "Product Management API")
 public class ProductController {
 
     private final ProductService productService;
 
     @GetMapping("/brand/{id}")
+    @Operation(summary = "상품 목록 조회 - 브랜드별")
     public ResponseEntity<PagedResponse<ProductResponse>> getProductsByBrand(
         @PathVariable final Long id,
         @PageableDefault final Pageable pageable
@@ -52,6 +56,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "상품 조회")
     public ResponseEntity<ProductResponse> getProduct(@PathVariable final Long id) {
         final Product product = productService.getProductById(id);
         final ProductResponse response = new ProductResponse(
@@ -67,6 +72,7 @@ public class ProductController {
     }
 
     @PostMapping
+    @Operation(summary = "상품 생성")
     public ResponseEntity<ProductResponse> createProduct(
         @RequestBody @Valid final CreateProductRequest request
     ) {
@@ -86,6 +92,7 @@ public class ProductController {
     }
 
     @PatchMapping("/{id}")
+    @Operation(summary = "상품 수정")
     public ResponseEntity<ProductResponse> updateProduct(
         @PathVariable final Long id,
         @RequestBody @Valid final UpdateProductRequest request
@@ -104,6 +111,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "상품 삭제")
     public ResponseEntity<ProductResponse> deleteProduct(@PathVariable final Long id) {
         final Product deletedProduct = productService.deleteProduct(id);
         final ProductResponse response = new ProductResponse(

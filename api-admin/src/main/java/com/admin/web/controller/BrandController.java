@@ -8,6 +8,8 @@ import com.admin.web.response.brand.BrandResponse;
 import com.storage.admin.Admin;
 import com.storage.brand.Brand;
 import com.support.response.PagedResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,11 +24,13 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/brand")
+@Tag(name = "Brand", description = "Brand Management API")
 public class BrandController {
 
     private final BrandService brandService;
 
     @GetMapping
+    @Operation(summary = "브랜드 목록 조회")
     public ResponseEntity<PagedResponse<BrandResponse>> getBrands(
         @CurrentAdmin final Admin admin,
         @PageableDefault final Pageable pageable
@@ -48,6 +52,7 @@ public class BrandController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "브랜드 조회")
     public ResponseEntity<BrandResponse> getBrand(@PathVariable final Long id) {
         final Brand brand = brandService.getBrand(id);
         final BrandResponse response = new BrandResponse(
@@ -59,6 +64,7 @@ public class BrandController {
     }
 
     @PostMapping
+    @Operation(summary = "브랜드 생성")
     public ResponseEntity<BrandResponse> createBrand(
         @RequestBody @Valid final CreateBrandRequest request,
         @CurrentAdmin final Admin admin
@@ -75,6 +81,7 @@ public class BrandController {
     }
 
     @PatchMapping("/{id}")
+    @Operation(summary = "브랜드 수정")
     public ResponseEntity<BrandResponse> updateBrand(
         @PathVariable final Long id,
         @RequestBody @Valid final UpdateBrandRequest request
@@ -89,6 +96,7 @@ public class BrandController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "브랜드 삭제")
     public ResponseEntity<BrandResponse> deleteBrand(
         @PathVariable final Long id,
         @CurrentAdmin final Admin admin
