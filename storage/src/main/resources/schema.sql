@@ -89,7 +89,7 @@ CREATE TABLE orders
 CREATE TABLE order_product
 (
     id              BIGINT UNSIGNED AUTO_INCREMENT       PRIMARY KEY,
-    orders_id       BIGINT UNSIGNED                      NOT NULL,
+    order_id        BIGINT UNSIGNED                      NOT NULL,
     product_id      BIGINT UNSIGNED                      NOT NULL,
     quantity        INT UNSIGNED                         NOT NULL,
     created_at      TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -1,6 +1,6 @@
 package com.user.fixture;
 
-import com.user.web.request.ReissueTokenRequest;
+import com.user.web.request.auth.ReissueTokenRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class TokenFixture {

@@ -8,7 +8,7 @@ import com.user.fixture.TokenFixture;
 import com.user.fixture.UserFixture;
 import com.user.service.AuthService;
 import com.user.service.TokenService;
-import com.user.web.request.ReissueTokenRequest;
+import com.user.web.request.auth.ReissueTokenRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;

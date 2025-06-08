@@ -15,7 +15,10 @@ public enum ErrorCode {
     EXPIRED_TOKEN(3002, "Expired token"),
 
     EMAIL_CONFLICT(4001, "Email already in use"),
-    NICKNAME_CONFLICT(4002, "Nickname already in use"),;
+    NICKNAME_CONFLICT(4002, "Nickname already in use"),
+
+    PRODUCT_NOT_FOUND(5001, "Product not found"),
+    INSUFFICIENT_STOCK(5002, "Insufficient stock"),;
 
     private final int code;
     private final String message;

@@ -1,4 +1,4 @@
-package com.user.web.response;
+package com.user.web.response.auth;
 
 public record UserTokenDto(
     String accessToken,

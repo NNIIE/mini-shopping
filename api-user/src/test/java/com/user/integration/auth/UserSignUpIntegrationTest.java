@@ -8,7 +8,7 @@ import com.storage.user.UserRepository;
 import com.user.exception.BusinessException;
 import com.user.exception.ErrorCode;
 import com.user.service.PasswordEncoder;
-import com.user.web.request.UserSignUpRequest;
+import com.user.web.request.auth.UserSignUpRequest;
 import org.junit.jupiter.api.DisplayName;
 import com.user.fixture.UserFixture;
 import org.junit.jupiter.api.Tag;

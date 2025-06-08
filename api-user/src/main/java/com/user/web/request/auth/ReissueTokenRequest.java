@@ -1,4 +1,4 @@
-package com.user.web.request;
+package com.user.web.request.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

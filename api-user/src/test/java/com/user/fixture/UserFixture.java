@@ -4,8 +4,8 @@ import com.storage.account.Account;
 import com.storage.enums.AccountStatus;
 import com.storage.enums.UserRole;
 import com.storage.user.User;
-import com.user.web.request.UserSignInRequest;
-import com.user.web.request.UserSignUpRequest;
+import com.user.web.request.auth.UserSignInRequest;
+import com.user.web.request.auth.UserSignUpRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class UserFixture {

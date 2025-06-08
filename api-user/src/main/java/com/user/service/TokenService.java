@@ -4,7 +4,7 @@ import com.storage.enums.TokenType;
 import com.user.exception.BusinessException;
 import com.user.exception.ErrorCode;
 import com.user.jwt.JwtTokenProvider;
-import com.user.web.response.UserTokenDto;
+import com.user.web.response.auth.UserTokenDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

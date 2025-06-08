@@ -4,7 +4,7 @@ import com.storage.enums.TokenType;
 import com.user.exception.BusinessException;
 import com.user.jwt.JwtTokenProvider;
 import com.user.service.TokenService;
-import com.user.web.response.UserTokenDto;
+import com.user.web.response.auth.UserTokenDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;

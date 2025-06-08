@@ -1,11 +1,11 @@
 package com.user.web.controller;
 
 import com.user.service.AuthService;
-import com.user.web.request.ReissueTokenRequest;
-import com.user.web.request.UserSignInRequest;
-import com.user.web.request.UserSignUpRequest;
-import com.user.web.response.UserTokenDto;
-import com.user.web.response.UserSignUpResponse;
+import com.user.web.request.auth.ReissueTokenRequest;
+import com.user.web.request.auth.UserSignInRequest;
+import com.user.web.request.auth.UserSignUpRequest;
+import com.user.web.response.auth.UserTokenDto;
+import com.user.web.response.auth.UserSignUpResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
