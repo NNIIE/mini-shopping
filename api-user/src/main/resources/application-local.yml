@@ -1,0 +1,9 @@
+spring:
+  config:
+    import: optional:classpath:database-local.yml
+jwt:
+  secret: jwtjwttokenkenjwtjwttokenkenjwtjwttokenkenabcdef
+  access-token:
+    expire: 30m
+  refresh-token:
+    expire: 7d
