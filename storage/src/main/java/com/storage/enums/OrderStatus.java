@@ -9,3 +9,4 @@ public enum OrderStatus {
     CANCELED,           // 취소
 
 }
+

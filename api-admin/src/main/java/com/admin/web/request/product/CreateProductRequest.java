@@ -36,3 +36,4 @@ public class CreateProductRequest {
     private Integer stock;
 
 }
+

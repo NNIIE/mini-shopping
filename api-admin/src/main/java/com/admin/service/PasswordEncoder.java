@@ -7,3 +7,4 @@ public interface PasswordEncoder {
     boolean verifyPassword(String requestPassword, String originPassword);
 
 }
+

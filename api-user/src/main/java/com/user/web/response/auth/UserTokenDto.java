@@ -5,3 +5,4 @@ public record UserTokenDto(
     String refreshToken
 ) {
 }
+

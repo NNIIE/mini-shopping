@@ -366,3 +366,4 @@ GET <baseEndPoint>/search/category/TOP/price-range
   }
 }
 ```
+

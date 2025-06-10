@@ -18,3 +18,4 @@ public class UpdateBrandRequest {
     private String name;
 
 }
+

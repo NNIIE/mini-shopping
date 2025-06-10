@@ -39,3 +39,4 @@ USER spring:spring
 EXPOSE 8082
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
+

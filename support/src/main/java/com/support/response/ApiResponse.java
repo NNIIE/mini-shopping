@@ -14,3 +14,4 @@ public record ApiResponse<T>(boolean isSuccess, String message, T data) {
     }
 
 }
+

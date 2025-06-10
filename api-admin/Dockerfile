@@ -6,3 +6,4 @@ COPY api-admin/build/libs/*.jar app.jar
 
 # 3. 컨테이너가 실행되면 jar 실행
 ENTRYPOINT ["java", "-jar", "/app.jar"]
+

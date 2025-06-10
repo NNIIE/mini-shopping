@@ -12,3 +12,4 @@ public enum TokenType {
     private long expiredMs;
 
 }
+

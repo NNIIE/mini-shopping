@@ -10,3 +10,4 @@ public record FindBrandResponse(
     Instant createdAt
 ) {
 }
+

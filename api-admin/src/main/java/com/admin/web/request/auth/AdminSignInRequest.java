@@ -23,3 +23,4 @@ public class AdminSignInRequest {
     private String password;
 
 }
+

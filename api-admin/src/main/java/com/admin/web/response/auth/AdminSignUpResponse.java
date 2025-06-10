@@ -5,3 +5,4 @@ public record AdminSignUpResponse(
     String email
 ) {
 }
+

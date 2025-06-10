@@ -15,3 +15,4 @@ public interface BrandRepository extends JpaRepository<Brand, Long> {
     Optional<Brand> findByIdAndAdminId(Long id, Long adminId);
 
 }
+

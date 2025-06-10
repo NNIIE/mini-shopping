@@ -24,3 +24,4 @@ public abstract class BaseEntity {
     private Instant updatedAt;
 
 }
+

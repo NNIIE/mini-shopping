@@ -6,3 +6,4 @@ public record UserSignUpResponse(
     String nickname
 ) {
 }
+

@@ -23,3 +23,4 @@ public class CreateBrandRequest {
     private String businessNumber;
 
 }
+

@@ -22,3 +22,4 @@ public class AdminSignUpRequest {
     private String password;
 
 }
+

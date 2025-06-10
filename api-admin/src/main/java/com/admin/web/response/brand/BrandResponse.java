@@ -5,3 +5,4 @@ public record BrandResponse(
     String name
 ) {
 }
+

@@ -22,3 +22,4 @@ public @interface CurrentUser {
   7. expression="user": CustomUserDetails.getUser() 호출하여 User 객체 획득
   7. User 객체를 컨트롤러 메서드 파라미터로 주입
  */
+

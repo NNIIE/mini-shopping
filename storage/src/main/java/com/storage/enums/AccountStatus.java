@@ -8,3 +8,4 @@ public enum AccountStatus {
     WITHDRAWN,      // 탈퇴
 
 }
+
