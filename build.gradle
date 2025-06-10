@@ -1,0 +1,117 @@
+plugins {
+	id 'java-library'													// api() 의존성 선언 기능 (의존하는 다른 모듈에도 전이)
+	id 'org.springframework.boot' version '3.4.4' apply(false)			// 스프링 부트 빌드, apply(false) 설정으로 하위 모듈에서만 사용
+	id 'io.spring.dependency-management' version '1.1.7' apply(false)	// 스프링 부트의 BOM 기반으로 라이브러리 호환 버전 자동 관리, apply(false) 설정으로 하위 모듈에서만 사용
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)		// 빌드 머신의 JDK와 관계없이 JDK21 환경에서 컴파일
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor						// compileOnly 설정이 annotationProcessor 설정 상속 (컴파일 시에만 사용)
+	}
+}
+
+repositories {												// 라이브러리 원격 저장소
+	mavenCentral()
+}
+
+subprojects {
+	group = 'com.shopping'
+	version = '0.0.1-SNAPSHOT'
+
+	apply plugin: 'java-library'							// apply(false)로 지정된 플러그인을 하위 모듈에서 사용
+	apply plugin: 'org.springframework.boot'
+	apply plugin: 'io.spring.dependency-management'
+
+	configurations {
+		compileOnly {
+			extendsFrom annotationProcessor						// compileOnly 설정이 annotationProcessor 설정 상속 (컴파일 시에만 사용)
+		}
+	}
+
+	repositories {
+		mavenCentral()
+	}
+
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(21)		// 빌드 머신의 JDK와 관계없이 JDK21 환경에서 컴파일
+		}
+	}
+
+	/*
+		implementation: 컴파일과 런타임 모두에 필요
+		compileOnly: 컴파일 시에만 필요
+		annotationProcessor: 컴파일 시점에 어노테이션을 처리하는 프로세서
+		testImplementation: 테스트 컴파일 및 실행에만 필요한 라이브러리
+		testRuntimeOnly: 테스트 실행시에만 필요한 라이브러리
+ 	*/
+	dependencies {
+		implementation 'org.springframework.boot:spring-boot-starter-web'
+		compileOnly 'org.projectlombok:lombok'
+		annotationProcessor 'org.projectlombok:lombok'
+		testImplementation 'org.springframework.boot:spring-boot-starter-test'
+		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	}
+
+	/*
+		./gradlew test							# 모든 테스트 실행
+		./gradlew unitTest						# 유닛 테스트 실행
+		./gradlew integrationTest				# 통합 테스트 실행
+
+		./gradlew :api-admin:test				# api-admin 모든 테스트 실행
+		./gradlew :api-admin:unitTest			# api-admin 유닛 테스트 실행
+		./gradlew :api-admin:integrationTest	# api-admin 통합 테스트 실행
+
+		./gradlew :api-user:test				# api-user 모든 테스트 실행
+		./gradlew :api-user:unitTest			# api-user 유닛 테스트 실행
+		./gradlew :api-user:integrationTest		# api-user 통합 테스트 실행
+	 */
+
+	tasks.withType(Test).configureEach {
+		testLogging {
+			events "passed", "skipped", "failed"
+			exceptionFormat "full"
+			showStandardStreams = true
+		}
+	}
+
+	// 테스트 태스크 구성
+	tasks.named('test') {
+		useJUnitPlatform()
+
+		// 항상 실행되도록 설정 (UP-TO-DATE 무시)
+		outputs.upToDateWhen { false }
+	}
+
+	// 단위 테스트만 실행하는 태스크
+	tasks.register('unitTest', Test) {
+		description = '단위 테스트만 실행합니다.'
+		group = 'verification'
+
+		useJUnitPlatform {
+			includeTags 'unit'
+		}
+
+		// 항상 실행되도록 설정 (UP-TO-DATE 무시)
+		outputs.upToDateWhen { false }
+	}
+
+	// 통합 테스트만 실행하는 태스크
+	tasks.register('integrationTest', Test) {
+		description = '통합 테스트만 실행합니다.'
+		group = 'verification'
+
+		useJUnitPlatform {
+			includeTags 'integration'
+		}
+
+		// 항상 실행되도록 설정 (UP-TO-DATE 무시)
+		outputs.upToDateWhen { false }
+	}
+}
