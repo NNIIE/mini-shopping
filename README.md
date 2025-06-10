@@ -1,3 +1,5 @@
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/NNIIE/mini-shopping?utm_source=oss&utm_medium=github&utm_campaign=NNIIE%2Fmini-shopping&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
+
 # 목차
 - [요구 사항](docs/project-requirement.md)
 - [개발 환경](docs/environment.md)
