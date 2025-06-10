@@ -38,6 +38,14 @@ public class ProductFixture {
         return request;
     }
 
+    /**
+     * 지정된 이름, 가격, 재고로 UpdateProductRequest 테스트 객체를 생성합니다.
+     *
+     * @param name 상품 이름
+     * @param price 상품 가격
+     * @param stock 상품 재고 수량
+     * @return 필드가 설정된 UpdateProductRequest 객체
+     */
     public static UpdateProductRequest createRequestForUpdateProduct(
         String name,
         BigDecimal price,

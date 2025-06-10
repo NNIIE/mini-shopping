@@ -16,6 +16,11 @@ public class SwaggerConfig {
             .info(apiInfo());
     }
 
+    /**
+     * OpenAPI 문서의 제목, 버전, 설명 정보를 포함하는 Info 객체를 생성합니다.
+     *
+     * @return API의 메타데이터가 설정된 Info 객체
+     */
     private Info apiInfo() {
         return new Info()
             .title("Mini Shopping Admin Api Swagger")

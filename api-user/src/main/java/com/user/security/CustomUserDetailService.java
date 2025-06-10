@@ -16,6 +16,13 @@ public class CustomUserDetailService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
+    /**
+     * 주어진 사용자 ID로 사용자를 조회하여 UserDetails 객체를 반환합니다.
+     *
+     * @param userId 조회할 사용자의 ID 문자열
+     * @return 조회된 사용자의 UserDetails 객체
+     * @throws BusinessException 사용자를 찾을 수 없는 경우 발생
+     */
     @Override
     public UserDetails loadUserByUsername(final String userId) throws UsernameNotFoundException {
             final User user = userRepository.findById(Long.parseLong(userId))

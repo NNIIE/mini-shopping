@@ -23,6 +23,12 @@ public enum ErrorCode {
     private final int code;
     private final String message;
 
+    /**
+     * 각 에러 코드 상수에 대한 코드와 메시지를 초기화합니다.
+     *
+     * @param code 에러 코드 값
+     * @param message 에러 메시지
+     */
     ErrorCode(final int code, final String message) {
         this.code = code;
         this.message = message;

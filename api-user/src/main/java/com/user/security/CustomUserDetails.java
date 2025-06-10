@@ -30,6 +30,11 @@ public class CustomUserDetails implements UserDetails {
         return user.getAccount().getEmail();
     }
 
+    /****
+     * 현재 인증된 사용자의 User 객체를 반환합니다.
+     *
+     * @return 인증된 사용자의 User 인스턴스
+     */
     public User getUser() {
         return user;
     }

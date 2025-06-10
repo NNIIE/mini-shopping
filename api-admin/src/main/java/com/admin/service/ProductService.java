@@ -64,6 +64,13 @@ public class ProductService {
         return product;
     }
 
+    /**
+     * 주어진 ID에 해당하는 상품을 조회합니다.
+     *
+     * @param id 조회할 상품의 ID
+     * @return 조회된 상품 엔티티
+     * @throws BusinessException 해당 ID의 상품이 존재하지 않을 경우 PRODUCT_NOT_FOUND 오류 코드와 함께 예외가 발생합니다.
+     */
     public Product findProductById(final Long id) {
         return productRepository.findById(id)
             .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));

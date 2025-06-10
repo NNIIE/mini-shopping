@@ -15,6 +15,14 @@ public class OrderFactory {
             .build();
     }
 
+    /**
+     * 지정된 주문, 상품, 수량으로 새로운 OrderProduct 객체를 생성합니다.
+     *
+     * @param order 주문 객체
+     * @param product 상품 객체
+     * @param quantity 주문 수량
+     * @return 생성된 OrderProduct 인스턴스
+     */
     public static OrderProduct createOrderProduct(
         final Order order,
         final Product product,

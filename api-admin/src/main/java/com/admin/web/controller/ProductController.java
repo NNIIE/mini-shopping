@@ -110,6 +110,12 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * 지정된 ID의 상품을 삭제하고 삭제된 상품 정보를 반환합니다.
+     *
+     * @param id 삭제할 상품의 ID
+     * @return 삭제된 상품의 정보를 담은 응답 엔티티
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "상품 삭제")
     public ResponseEntity<ProductResponse> deleteProduct(@PathVariable final Long id) {

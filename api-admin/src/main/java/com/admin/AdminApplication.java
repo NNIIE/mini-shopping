@@ -16,6 +16,11 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 })
 public class AdminApplication {
 
+    /**
+     * Spring Boot 애플리케이션을 시작합니다.
+     *
+     * @param args 커맨드라인 인수
+     */
     public static void main(String[] args) {
         SpringApplication.run(AdminApplication.class, args);
     }

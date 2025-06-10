@@ -30,6 +30,11 @@ public class CustomAdminDetails implements UserDetails {
         return admin.getAccount().getEmail();
     }
 
+    /**
+     * 인증된 관리자를 나타내는 Admin 객체를 반환합니다.
+     *
+     * @return 현재 인증된 Admin 인스턴스
+     */
     public Admin getAdmin() {
         return admin;
     }

@@ -76,6 +76,12 @@ public class JwtTokenProvider {
         return "";
     }
 
+    /**
+     * JWT 토큰에서 만료 일자를 추출합니다.
+     *
+     * @param token 만료 일자를 확인할 JWT 토큰 문자열
+     * @return 토큰의 만료 일자
+     */
     public Date getExpiration(final String token) {
         return Jwts.parser()
             .verifyWith(secretKey)

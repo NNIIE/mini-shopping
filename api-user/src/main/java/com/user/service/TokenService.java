@@ -75,6 +75,13 @@ public class TokenService {
         );
     }
 
+    /**
+     * 주어진 사용자 ID와 발급 시각을 기반으로 액세스 토큰을 생성합니다.
+     *
+     * @param userId 토큰을 발급할 사용자 ID
+     * @param issuedAt 토큰 발급 시각
+     * @return 생성된 액세스 토큰 문자열
+     */
     public String createAccessToken(
         final Long userId,
         final Instant issuedAt

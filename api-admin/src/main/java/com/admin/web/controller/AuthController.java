@@ -37,6 +37,13 @@ public class AuthController {
             .body(response);
     }
 
+    /**
+     * 관리자가 이메일과 비밀번호로 로그인하여 세션을 생성합니다.
+     *
+     * @param request 로그인 요청 정보가 담긴 객체
+     * @param httpRequest HTTP 요청 객체
+     * @return 생성된 세션 ID를 포함한 응답
+     */
     @PostMapping("/signIn")
     @Operation(summary = "로그인")
     public ResponseEntity<String> adminSignIn(

@@ -63,6 +63,13 @@ public class UserFixture {
         return request;
     }
 
+    /**
+     * 주어진 이메일과 비밀번호로 UserSignInRequest 테스트 객체를 생성합니다.
+     *
+     * @param email 사용자 이메일
+     * @param password 사용자 비밀번호
+     * @return 지정된 값으로 필드가 설정된 UserSignInRequest 인스턴스
+     */
     public static UserSignInRequest createRequestForUserSignInParameter(
         final String email,
         final String password

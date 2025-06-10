@@ -23,6 +23,13 @@ public class OrderController {
 
     private final OrderService orderService;
 
+    /**
+     * 새로운 주문을 생성하고 결과를 반환합니다.
+     *
+     * @param request 생성할 주문의 정보가 담긴 요청 객체
+     * @param user 현재 인증된 사용자 정보
+     * @return 생성된 주문에 대한 응답 정보가 포함된 ResponseEntity
+     */
     @PostMapping
     @Operation(summary = "주문 생성")
     public ResponseEntity<OrderResponse> createOrder(

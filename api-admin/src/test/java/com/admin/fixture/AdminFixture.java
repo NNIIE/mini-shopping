@@ -45,6 +45,13 @@ public class AdminFixture {
         return request;
     }
 
+    /**
+     * 지정된 이메일과 비밀번호로 AdminSignInRequest 테스트 객체를 생성합니다.
+     *
+     * @param email 관리자 계정의 이메일
+     * @param password 관리자 계정의 비밀번호
+     * @return 주어진 이메일과 비밀번호가 설정된 AdminSignInRequest 객체
+     */
     public static AdminSignInRequest createRequestForAdminSignIn(final String email, final String password) {
         AdminSignInRequest request = new AdminSignInRequest();
         ReflectionTestUtils.setField(request, "email", email);

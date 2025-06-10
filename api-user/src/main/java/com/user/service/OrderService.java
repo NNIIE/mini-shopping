@@ -60,6 +60,12 @@ public class OrderService {
         return new OrderResponse(order.getId(), orderProductResponses, totalPrice);
     }
 
+    /**
+     * 주문 상품 목록의 각 상품 가격과 수량을 곱한 값을 모두 합산하여 총 금액을 계산합니다.
+     *
+     * @param orderProductResponses 주문 상품 응답 객체 리스트
+     * @return 주문 전체의 총 금액
+     */
     private static BigDecimal calculateTotalPrice(final List<OrderProductResponse> orderProductResponses) {
         return orderProductResponses.stream()
             .map(resp -> resp.price().multiply(BigDecimal.valueOf(resp.quantity())))

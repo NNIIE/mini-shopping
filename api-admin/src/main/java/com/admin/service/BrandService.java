@@ -68,6 +68,12 @@ public class BrandService {
         );
     }
 
+    /**
+     * 브랜드 이름이 중복되는지 확인하고, 중복될 경우 예외를 발생시킵니다.
+     *
+     * @param brandName 중복 여부를 확인할 브랜드 이름
+     * @throws BusinessException 브랜드 이름이 이미 존재할 경우 {@code ErrorCode.BRAND_NAME_CONFLICT}와 함께 발생합니다.
+     */
     public void checkBrandNameDuplication(final String brandName) {
         brandRepository.findByName(brandName).ifPresent(brand -> {
             throw new BusinessException(ErrorCode.BRAND_NAME_CONFLICT);

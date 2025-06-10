@@ -45,6 +45,15 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * HTTP 요청 경로별로 접근 권한을 설정합니다.
+     *
+     * API 문서, 헬스 체크, 인증 관련 엔드포인트는 모두 허용하며,
+     * `/admin/**` 경로는 ADMIN 역할이 필요합니다.
+     * 그 외 모든 요청은 인증이 필요합니다.
+     *
+     * @param auth HTTP 요청 권한 설정을 위한 레지스트리
+     */
     private void configureAuthorizeRequests(final AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
         auth.requestMatchers(
                 "/v3/api-docs/**",

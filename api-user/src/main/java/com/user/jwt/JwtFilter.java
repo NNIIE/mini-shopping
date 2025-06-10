@@ -40,6 +40,12 @@ public class JwtFilter extends OncePerRequestFilter {
         return (CustomUserDetails) customUserDetailService.loadUserByUsername(userId.toString());
     }
 
+    /**
+     * 주어진 사용자 정보를 기반으로 인증 토큰을 생성합니다.
+     *
+     * @param userDetails 인증에 사용할 사용자 정보
+     * @return 사용자 정보와 권한이 포함된 UsernamePasswordAuthenticationToken 객체
+     */
     private UsernamePasswordAuthenticationToken getAuthenticationToken(final CustomUserDetails userDetails) {
         return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
     }

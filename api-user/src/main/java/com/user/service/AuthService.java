@@ -93,6 +93,13 @@ public class AuthService {
         return accountRepository.save(account);
     }
 
+    /**
+     * 회원 가입 요청 정보와 저장된 계정 정보를 기반으로 새로운 사용자 엔티티를 생성하여 저장합니다.
+     *
+     * @param request 회원 가입 요청 정보
+     * @param savedAccount 이미 저장된 계정 엔티티
+     * @return 저장된 사용자 엔티티
+     */
     private User registerUser(final UserSignUpRequest request, final Account savedAccount) {
         final User signUpUser = UserFactory.createUserForSignUp(
             savedAccount,

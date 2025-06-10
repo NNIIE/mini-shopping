@@ -56,6 +56,11 @@ public class SecurityConfig {
             .authenticated();
     }
 
+    /**
+     * 세션 관리 정책을 무상태(Stateless)로 설정합니다.
+     *
+     * 이 설정은 서버가 세션을 생성하거나 저장하지 않도록 하여, JWT 기반 인증과 같은 무상태 인증 방식을 지원합니다.
+     */
     private void configureSessionManagement(final SessionManagementConfigurer<HttpSecurity> session) {
         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }

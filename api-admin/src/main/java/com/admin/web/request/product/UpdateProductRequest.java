@@ -32,6 +32,11 @@ public class UpdateProductRequest {
         return price != null;
     }
 
+    /**
+     * 재고(stock) 필드가 설정되어 있는지 여부를 반환합니다.
+     *
+     * @return 재고 값이 null이 아니면 true, 그렇지 않으면 false
+     */
     public boolean hasStock() {
         return stock != null;
     }

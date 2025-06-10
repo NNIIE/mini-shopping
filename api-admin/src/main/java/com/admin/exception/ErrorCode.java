@@ -21,6 +21,12 @@ public enum ErrorCode {
     private final int code;
     private final String message;
 
+    /**
+     * 지정된 오류 코드와 메시지로 ErrorCode 열거형 상수를 초기화합니다.
+     *
+     * @param code 오류 코드 값
+     * @param message 오류 메시지
+     */
     ErrorCode(final int code, final String message) {
         this.code = code;
         this.message = message;

@@ -95,6 +95,12 @@ public class BrandController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * 지정된 브랜드를 현재 관리자 계정으로 삭제하고 삭제된 브랜드 정보를 반환합니다.
+     *
+     * @param id 삭제할 브랜드의 식별자
+     * @return 삭제된 브랜드의 ID와 이름이 포함된 응답
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "브랜드 삭제")
     public ResponseEntity<BrandResponse> deleteBrand(

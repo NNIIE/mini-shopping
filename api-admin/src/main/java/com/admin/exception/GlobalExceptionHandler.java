@@ -30,6 +30,13 @@ public class GlobalExceptionHandler {
             .body(response);
     }
 
+    /**
+     * BusinessException이 발생했을 때 예외 응답을 반환합니다.
+     *
+     * @param ex 처리할 BusinessException 인스턴스
+     * @param request 예외가 발생한 HTTP 요청 정보
+     * @return 내부 서버 오류 코드가 포함된 ExceptionResponse와 함께 500 상태의 응답
+     */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ExceptionResponse> handleBusinessException(
         final BusinessException ex,
