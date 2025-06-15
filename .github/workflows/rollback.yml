@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       service:
-        description: 'Service to rollback'
+        description: '롤백할 서비스 선택'
         required: true
         type: choice
         options:
@@ -12,111 +12,275 @@ on:
           - api-admin
           - both
       commit_sha:
-        description: 'Commit SHA or ECR tag to rollback to'
+        description: '롤백할 커밋 SHA 또는 ECR 태그 (릴리즈 노트에서 복사)'
         required: true
         type: string
+        # 예시: 01f2b7e8b443448e5989fe002854b74149076120
       reason:
-        description: 'Reason for rollback'
+        description: '롤백 사유'
         required: true
         type: string
+        # 예시: 버그 발견으로 인한 긴급 롤백
+
+# GitHub Actions 권한 설정
+permissions:
+  contents: read    # 코드 읽기 권한
+  issues: write     # 이슈 생성 권한
+
+env:
+  AWS_REGION: 'ap-northeast-2'
 
 jobs:
   rollback:
     name: Rollback ${{ github.event.inputs.service }}
     runs-on: ubuntu-latest
     steps:
+      # Step 1: AWS 인증 설정
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-northeast-2
+          aws-region: ${{ env.AWS_REGION }}
 
+      # Step 2: ECR 로그인
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # api-user 롤백
+      # Step 3: 롤백 전 현재 상태 기록
+      - name: Log current state before rollback
+        run: |
+          echo "📸 롤백 전 현재 상태 기록"
+          echo "================================"
+          
+          # api-user 현재 상태
+          if [[ "${{ github.event.inputs.service }}" == "api-user" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
+            echo "### api-user 서비스 현재 상태 ###"
+            aws ecs describe-services \
+              --cluster mini-shopping-cluster \
+              --services api-user-service \
+              --query 'services[0].{TaskDefinition:taskDefinition,DesiredCount:desiredCount,RunningCount:runningCount}' \
+              --output json
+          fi
+          
+          # api-admin 현재 상태
+          if [[ "${{ github.event.inputs.service }}" == "api-admin" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
+            echo "### api-admin 서비스 현재 상태 ###"
+            aws ecs describe-services \
+              --cluster mini-shopping-cluster \
+              --services api-admin-service \
+              --query 'services[0].{TaskDefinition:taskDefinition,DesiredCount:desiredCount,RunningCount:runningCount}' \
+              --output json
+          fi
+
+      # Step 4: 대상 이미지 존재 여부 확인
+      - name: Verify target image exists
+        run: |
+          echo "🔍 롤백 대상 이미지 확인 중..."
+          
+          # api-user 이미지 확인
+          if [[ "${{ github.event.inputs.service }}" == "api-user" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
+            echo "Checking api-user image: ${{ github.event.inputs.commit_sha }}"
+            aws ecr describe-images \
+              --repository-name mini-shopping/api-user \
+              --image-ids imageTag=${{ github.event.inputs.commit_sha }} \
+              --query 'imageDetails[0].imagePushedAt' \
+              --output text || { echo "❌ api-user 이미지를 찾을 수 없습니다!"; exit 1; }
+          fi
+          
+          # api-admin 이미지 확인
+          if [[ "${{ github.event.inputs.service }}" == "api-admin" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
+            echo "Checking api-admin image: ${{ github.event.inputs.commit_sha }}"
+            aws ecr describe-images \
+              --repository-name mini-shopping/api-admin \
+              --image-ids imageTag=${{ github.event.inputs.commit_sha }} \
+              --query 'imageDetails[0].imagePushedAt' \
+              --output text || { echo "❌ api-admin 이미지를 찾을 수 없습니다!"; exit 1; }
+          fi
+          
+          echo "✅ 대상 이미지 확인 완료"
+
+      # Step 5: api-user 롤백 실행
       - name: Rollback api-user
         if: github.event.inputs.service == 'api-user' || github.event.inputs.service == 'both'
         run: |
-          # 현재 태스크 정의 가져오기
+          echo "🔄 api-user 롤백 시작..."
+          
+          # 현재 태스크 정의 다운로드
           aws ecs describe-task-definition \
             --task-definition api-user-task \
             --query taskDefinition > current-task-def.json
           
-          # 이미지 태그 변경
+          # 이미지 태그를 롤백 대상으로 변경
+          # jq를 사용하여 JSON 파일의 이미지 URL 수정
           jq '.containerDefinitions[0].image = "${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-user:${{ github.event.inputs.commit_sha }}"' \
             current-task-def.json > new-task-def.json
           
-          # 불필요한 필드 제거
+          # 불필요한 필드 제거 (AWS에서 자동 생성하는 필드들)
           jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection)' \
             new-task-def.json > final-task-def.json
           
-          # 새 태스크 정의 등록
+          # 새로운 태스크 정의 등록
+          echo "📝 새 태스크 정의 등록 중..."
           TASK_ARN=$(aws ecs register-task-definition \
             --cli-input-json file://final-task-def.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
           
-          # 서비스 업데이트
+          echo "✅ 새 태스크 정의: $TASK_ARN"
+          
+          # ECS 서비스 업데이트 (새 태스크 정의로 배포)
+          echo "🚀 서비스 업데이트 중..."
           aws ecs update-service \
             --cluster mini-shopping-cluster \
             --service api-user-service \
             --task-definition $TASK_ARN \
             --force-new-deployment
           
-          echo "✅ api-user rolled back to ${{ github.event.inputs.commit_sha }}"
+          echo "✅ api-user 롤백 명령 완료 (배포 진행 중)"
 
-      # api-admin 롤백 (동일한 로직)
+      # Step 6: api-admin 롤백 실행
       - name: Rollback api-admin
         if: github.event.inputs.service == 'api-admin' || github.event.inputs.service == 'both'
         run: |
-          # (위와 동일한 로직, api-admin으로 변경)
+          echo "🔄 api-admin 롤백 시작..."
+          
+          # 현재 태스크 정의 다운로드
           aws ecs describe-task-definition \
             --task-definition api-admin-task \
             --query taskDefinition > current-task-def.json
           
+          # 이미지 태그를 롤백 대상으로 변경
           jq '.containerDefinitions[0].image = "${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-admin:${{ github.event.inputs.commit_sha }}"' \
             current-task-def.json > new-task-def.json
           
+          # 불필요한 필드 제거
           jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection)' \
             new-task-def.json > final-task-def.json
           
+          # 새로운 태스크 정의 등록
+          echo "📝 새 태스크 정의 등록 중..."
           TASK_ARN=$(aws ecs register-task-definition \
             --cli-input-json file://final-task-def.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
           
+          echo "✅ 새 태스크 정의: $TASK_ARN"
+          
+          # ECS 서비스 업데이트
+          echo "🚀 서비스 업데이트 중..."
           aws ecs update-service \
             --cluster mini-shopping-cluster \
             --service api-admin-service \
             --task-definition $TASK_ARN \
             --force-new-deployment
           
-          echo "✅ api-admin rolled back to ${{ github.event.inputs.commit_sha }}"
+          echo "✅ api-admin 롤백 명령 완료 (배포 진행 중)"
 
-      # 롤백 기록 생성
-      - name: Create rollback record
+      # Step 9: GitHub Issue 생성 (롤백 기록)
+      - name: Create rollback record issue
+        if: success()  # 롤백 성공 시에만 실행
         uses: actions/github-script@v6
         with:
           script: |
-            const issue = await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `🔄 Rollback: ${context.payload.inputs.service} to ${context.payload.inputs.commit_sha.substring(0, 7)}`,
-              body: `## Rollback Information
+            const issueTitle = `🔄 Rollback: ${context.payload.inputs.service} to ${context.payload.inputs.commit_sha.substring(0, 7)}`;
+            const issueBody = `## 롤백 정보
+
+            ### 기본 정보
+            - **서비스:** ${context.payload.inputs.service}
+            - **대상 버전:** \`${context.payload.inputs.commit_sha}\`
+            - **롤백 사유:** ${context.payload.inputs.reason}
+            - **실행자:** @${context.actor}
+            - **실행 시간:** ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })} (KST)
             
-              - **Service:** ${context.payload.inputs.service}
-              - **Target Version:** ${context.payload.inputs.commit_sha}
-              - **Reason:** ${context.payload.inputs.reason}
-              - **Executed by:** @${context.actor}
-              - **Time:** ${new Date().toISOString()}
+            ### 롤백 결과
+            - **상태:** ✅ 성공
+            - **GitHub Actions 링크:** [Run #${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
             
-              ### Next Steps
-              1. Monitor service health
-              2. Verify rollback success
-              3. Investigate root cause
-              `,
-              labels: ['rollback', 'production']
-            });
+            ### 다음 단계
+            1. ECS 콘솔에서 배포 완료 확인 (약 2-5분 소요)
+            2. 헬스체크 및 모니터링 확인
+            3. 문제 원인 분석 및 수정
+            4. 수정 후 재배포 계획 수립
+            
+            ### 유용한 명령어
+            \`\`\`bash
+            # 서비스 상태 확인
+            aws ecs describe-services --cluster mini-shopping-cluster --services ${context.payload.inputs.service}-service --query 'services[0].deployments'
+            
+            # 실행 중인 태스크 확인
+            aws ecs list-tasks --cluster mini-shopping-cluster --service ${context.payload.inputs.service}-service
+            \`\`\`
+            
+            ---
+            
+            cc: @${context.actor}
+            `;
+            
+            try {
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issueTitle,
+                body: issueBody,
+                labels: ['rollback', 'production', context.payload.inputs.service]
+              });
+            
+              console.log(`✅ 롤백 기록 이슈 생성 완료: #${issue.data.number}`);
+            } catch (error) {
+              console.log('⚠️ 이슈 생성 실패 (권한 문제일 수 있음):', error.message);
+              console.log('롤백은 성공적으로 완료되었습니다.');
+            }
+
+      # Step 10: 최종 요약
+      - name: Summary
+        if: always()
+        run: |
+          echo "## 📋 롤백 요약"
+          echo "================================"
+          echo "- 서비스: ${{ github.event.inputs.service }}"
+          echo "- 대상 버전: ${{ github.event.inputs.commit_sha }}"
+          echo "- 사유: ${{ github.event.inputs.reason }}"
+          echo "- 실행자: ${{ github.actor }}"
+          echo "- 상태: ${{ job.status }}"
+          echo "================================"
+          echo ""
+          echo "💡 다음 단계:"
+          echo "1. AWS ECS 콘솔에서 배포 진행 상황 확인"
+          echo "2. CloudWatch 로그 모니터링"
+          echo "3. 애플리케이션 헬스체크 확인"
+          echo ""
+          echo "🔗 유용한 링크:"
+          echo "- ECS 콘솔: https://console.aws.amazon.com/ecs/home?region=ap-northeast-2"
+          echo "- CloudWatch: https://console.aws.amazon.com/cloudwatch/home?region=ap-northeast-2"
+          
+          
+
+#      # Slack 알림 (Slack Webhook URL이 있는 경우)
+#      - name: Send Slack notification
+#        if: always() && env.SLACK_WEBHOOK_URL != ''
+#        env:
+#          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+#        run: |
+#          STATUS="${{ job.status }}"
+#          COLOR="danger"
+#          if [ "$STATUS" == "success" ]; then
+#            COLOR="good"
+#          fi
+#
+#          curl -X POST $SLACK_WEBHOOK_URL \
+#            -H 'Content-type: application/json' \
+#            -d '{
+#              "attachments": [{
+#                "color": "'$COLOR'",
+#                "title": "🔄 ECS 롤백 '$STATUS'",
+#                "fields": [
+#                  {"title": "서비스", "value": "'${{ github.event.inputs.service }}'", "short": true},
+#                  {"title": "대상 버전", "value": "'${{ github.event.inputs.commit_sha }}'", "short": true},
+#                  {"title": "사유", "value": "'${{ github.event.inputs.reason }}'", "short": false},
+#                  {"title": "실행자", "value": "'${{ github.actor }}'", "short": true},
+#                  {"title": "시간", "value": "'$(date +'%Y-%m-%d %H:%M:%S KST')'", "short": true}
+#                ]
+#              }]
+#            }'
