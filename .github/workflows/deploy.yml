@@ -185,7 +185,7 @@ jobs:
           wait-for-service-stability: true
 
 
-  # --- 릴리즈 노트 자동 생성 Job ---
+# --- 릴리즈 노트 자동 생성 Job ---
   create-release-note:
     name: Create Release Note
     runs-on: ubuntu-latest
@@ -197,6 +197,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      # 현재 시간 가져오기 (한국 시간)
+      - name: Get current date
+        id: date
+        run: |
+          echo "date=$(TZ=Asia/Seoul date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          echo "datetime=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+          echo "timestamp=$(TZ=Asia/Seoul date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+
       # AWS 인증 설정
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -204,6 +212,31 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
+
+      # PR 정보 추출 (커밋 메시지에서)
+      - name: Extract PR Info
+        id: prinfo
+        run: |
+          # 커밋 메시지에서 PR 번호 추출 (예: "Merge pull request #21")
+          PR_NUMBER=$(echo "${{ github.event.head_commit.message }}" | grep -oP '#\K[0-9]+' | head -1)
+          
+          if [ ! -z "$PR_NUMBER" ]; then
+            echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          
+            # GitHub API로 PR 정보 가져오기
+            PR_INFO=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER)
+            PR_TITLE=$(echo "$PR_INFO" | jq -r '.title')
+            PR_AUTHOR=$(echo "$PR_INFO" | jq -r '.user.login')
+          
+            echo "title=$PR_TITLE" >> $GITHUB_OUTPUT
+            echo "author=$PR_AUTHOR" >> $GITHUB_OUTPUT
+          else
+            echo "number=" >> $GITHUB_OUTPUT
+            echo "title=" >> $GITHUB_OUTPUT
+            echo "author=" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # 공통 모듈(storage, support) 변경 감지
       - name: Detect if storage/support changed
@@ -215,22 +248,15 @@ jobs:
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
-      # PR 정보 추출 (PR 머지 기반인 경우)
-      - name: Get PR Info (optional)
-        id: prinfo
-        if: github.event.pull_request != null
-        run: |
-          echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
-          echo "title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
-          echo "author=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
-
-      # 변경 파일/커밋 로그 추출 (changelog)
+      # 변경 파일/커밋 로그 추출
       - name: Generate changelog
         id: changelog
         run: |
           echo "log<<EOF" >> $GITHUB_OUTPUT
           git log --pretty=format:'- %h %s (%an)' ${{ github.event.before }}..${{ github.sha }} >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+          
           echo "files<<EOF" >> $GITHUB_OUTPUT
           git diff --name-only ${{ github.event.before }} ${{ github.sha }} >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -238,56 +264,76 @@ jobs:
       # ECR 이미지 digest 추출 (api-user)
       - name: Get image digest api-user
         id: digest_user
+        if: needs.deploy-api-user.result == 'success'
         run: |
-          digest=$(aws ecr describe-images --repository-name mini-shopping/api-user --image-ids imageTag=${{ github.sha }} --query 'imageDetails[0].imageDigest' --output text)
+          digest=$(aws ecr describe-images --repository-name mini-shopping/api-user --image-ids imageTag=${{ github.sha }} --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || echo "N/A")
           echo "digest=$digest" >> $GITHUB_OUTPUT
 
       # ECR 이미지 digest 추출 (api-admin)
       - name: Get image digest api-admin
         id: digest_admin
+        if: needs.deploy-api-admin.result == 'success'
         run: |
-          digest=$(aws ecr describe-images --repository-name mini-shopping/api-admin --image-ids imageTag=${{ github.sha }} --query 'imageDetails[0].imageDigest' --output text)
+          digest=$(aws ecr describe-images --repository-name mini-shopping/api-admin --image-ids imageTag=${{ github.sha }} --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || echo "N/A")
           echo "digest=$digest" >> $GITHUB_OUTPUT
 
-      # 릴리즈 노트/릴리즈 생성(GitHub Releases)
+      # 릴리즈 노트/릴리즈 생성
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: release-${{ github.run_number }}-${{ github.run_id }}
-          name: Release ${{ github.run_number }} (${{ github.sha }})
+          tag_name: release-${{ steps.date.outputs.timestamp }}
+          name: Release ${{ github.run_number }} - ${{ steps.date.outputs.datetime }}
           body: |
             ## 🚀 ECS 배포 완료
-            - **api-user 배포됨:** ${{ needs.deploy-api-user.result == 'success' }}
-              - ECR 태그: `${{ github.sha }}`
-              - Digest: ${{ steps.digest_user.outputs.digest }}
             
-            - **api-admin 배포됨:** ${{ needs.deploy-api-admin.result == 'success' }}
-              - ECR 태그: `${{ github.sha }}`
-              - Digest: ${{ steps.digest_admin.outputs.digest }}
+            ### 배포 정보
+            - **배포 시간:** ${{ steps.date.outputs.datetime }} (KST)
+            - **배포 번호:** #${{ github.run_number }}
+            - **커밋 SHA:** ${{ github.sha }}
             
-            - 공통 모듈 변경됨: ${{ steps.common_change.outputs.changed }}
-            - 커밋 메시지: ${{ github.event.head_commit.message }}
-            - 커밋 링크: [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
-            - PR 번호: ${{ steps.prinfo.outputs.number }}
-            - PR 제목: ${{ steps.prinfo.outputs.title }}
-            - PR 작성자: ${{ steps.prinfo.outputs.author }}
-
-            - 변경 파일:
+            ### 배포 결과
+            - **api-user:** ${{ needs.deploy-api-user.result == 'success' && '✅ 성공' || needs.deploy-api-user.result == 'skipped' && '⏭️ 스킵' || '❌ 실패' }}
+              - ECR 태그: `${{ github.sha }}`
+              - Digest: `${{ steps.digest_user.outputs.digest }}`
+            
+            - **api-admin:** ${{ needs.deploy-api-admin.result == 'success' && '✅ 성공' || needs.deploy-api-admin.result == 'skipped' && '⏭️ 스킵' || '❌ 실패' }}
+              - ECR 태그: `${{ github.sha }}`
+              - Digest: `${{ steps.digest_admin.outputs.digest }}`
+            
+            ### PR 정보
+            - **PR 번호:** ${{ steps.prinfo.outputs.number && format('#{0}', steps.prinfo.outputs.number) || 'N/A' }}
+            - **PR 제목:** ${{ steps.prinfo.outputs.title || 'N/A' }}
+            - **PR 작성자:** ${{ steps.prinfo.outputs.author || 'N/A' }}
+            
+            ### 변경 내역
+            - **공통 모듈 변경:** ${{ steps.common_change.outputs.changed == 'true' && '예' || '아니오' }}
+            - **커밋 메시지:** ${{ github.event.head_commit.message }}
+            
+            <details>
+            <summary>📁 변경된 파일 목록</summary>
+            
             ```
             ${{ steps.changelog.outputs.files }}
             ```
-
-            - 커밋 로그:
+            </details>
+            
+            <details>
+            <summary>📝 커밋 로그</summary>
+            
             ```
             ${{ steps.changelog.outputs.log }}
             ```
-
-            - 릴리즈 작성자: ${{ github.actor }}
-            - 배포 환경: ${{ env.ENVIRONMENT }}
-
-            > 롤백/재배포할 때 ECR 태그/ Digest/ 커밋 SHA를 참고
+            </details>
+            
+            ### 기타 정보
+            - **릴리즈 작성자:** @${{ github.actor }}
+            - **배포 환경:** Production
+            - **커밋 링크:** [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+            
+            ---
+            
+            > 💡 **롤백 가이드**: ECR 태그, Digest, 또는 커밋 SHA를 사용하여 이전 버전으로 롤백할 수 있습니다.
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ENVIRONMENT: production
 
