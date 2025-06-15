@@ -253,8 +253,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.sha }}
-          name: Release ${{ github.sha }}
+          tag_name: release-${{ github.run_number }}-${{ github.run_id }}
+          name: Release ${{ github.run_number }} (${{ github.sha }})
           body: |
             ## 🚀 ECS 배포 완료
             - **api-user 배포됨:** ${{ needs.deploy-api-user.result == 'success' }}
