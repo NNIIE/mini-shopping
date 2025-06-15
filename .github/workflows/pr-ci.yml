@@ -1,0 +1,71 @@
+name: PR CI Check
+
+on:
+  pull_request:
+    branches: [ main ]
+
+env:
+  JAVA_VERSION: '21'
+
+jobs:
+  # 변경 사항 감지
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      api-user: ${{ steps.filter.outputs.api-user }}
+      api-admin: ${{ steps.filter.outputs.api-admin }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            api-user:
+              - 'api-user/**'
+              - 'storage/**'
+              - 'support/**'
+              - 'build.gradle'
+              - 'settings.gradle'
+            api-admin:
+              - 'api-admin/**'
+              - 'storage/**'
+              - 'support/**'
+              - 'build.gradle'
+              - 'settings.gradle'
+
+  # api-user 빌드 및 테스트 (변경시에만)
+  check-api-user:
+    name: Check api-user
+    needs: detect-changes
+    if: needs.detect-changes.outputs.api-user == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+      - name: Build and Test api-user
+        run: |
+          chmod +x gradlew
+          ./gradlew :api-user:build
+
+  # api-admin 빌드 및 테스트 (변경시에만)
+  check-api-admin:
+    name: Check api-admin
+    needs: detect-changes
+    if: needs.detect-changes.outputs.api-admin == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+      - name: Build and Test api-admin
+        run: |
+          chmod +x gradlew
+          ./gradlew :api-admin:build
