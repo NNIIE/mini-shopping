@@ -42,11 +42,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
+
+      # 컴파일/테스트 모두 수행 (에러시 Job 실패)
       - name: Build and Test api-user
         run: |
           chmod +x gradlew
@@ -60,11 +63,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
+
+      # 컴파일/테스트 모두 수행 (에러시 Job 실패)
       - name: Build and Test api-admin
         run: |
           chmod +x gradlew
