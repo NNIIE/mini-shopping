@@ -1,5 +1,9 @@
+# 버전을 ARG로 관리하여 중앙 제어
+ARG JAVA_VERSION=21
+ARG GRADLE_VERSION=8.5
+
 # 1. 빌드 스테이지 (JAR 파일 생성)
-FROM gradle:8.5-jdk21-alpine AS build
+FROM gradle:${GRADLE_VERSION}-jdk${JAVA_VERSION}-alpine AS build
 WORKDIR /app
 
 # Gradle 및 의존성 파일 복사 (캐시 활용)
@@ -21,7 +25,7 @@ COPY . .
 RUN ./gradlew :api-user:bootJar --no-daemon
 
 # 2. 런타임 스테이지 (최소 환경)
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:${JAVA_VERSION}-jre-alpine
 WORKDIR /app
 
 # 보안: non-root user 생성
@@ -35,7 +39,5 @@ COPY --from=build /app/api-user/build/libs/*.jar app.jar
 RUN chown -R spring:spring /app
 USER spring:spring
 
-# api-user 포트 노출 (8082)
 EXPOSE 8082
-
 ENTRYPOINT ["java", "-jar", "app.jar"]
