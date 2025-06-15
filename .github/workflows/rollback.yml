@@ -1,0 +1,122 @@
+name: Rollback ECS Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to rollback'
+        required: true
+        type: choice
+        options:
+          - api-user
+          - api-admin
+          - both
+      commit_sha:
+        description: 'Commit SHA or ECR tag to rollback to'
+        required: true
+        type: string
+      reason:
+        description: 'Reason for rollback'
+        required: true
+        type: string
+
+jobs:
+  rollback:
+    name: Rollback ${{ github.event.inputs.service }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # api-user 롤백
+      - name: Rollback api-user
+        if: github.event.inputs.service == 'api-user' || github.event.inputs.service == 'both'
+        run: |
+          # 현재 태스크 정의 가져오기
+          aws ecs describe-task-definition \
+            --task-definition api-user-task \
+            --query taskDefinition > current-task-def.json
+          
+          # 이미지 태그 변경
+          jq '.containerDefinitions[0].image = "${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-user:${{ github.event.inputs.commit_sha }}"' \
+            current-task-def.json > new-task-def.json
+          
+          # 불필요한 필드 제거
+          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection)' \
+            new-task-def.json > final-task-def.json
+          
+          # 새 태스크 정의 등록
+          TASK_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://final-task-def.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          
+          # 서비스 업데이트
+          aws ecs update-service \
+            --cluster mini-shopping-cluster \
+            --service api-user-service \
+            --task-definition $TASK_ARN \
+            --force-new-deployment
+          
+          echo "✅ api-user rolled back to ${{ github.event.inputs.commit_sha }}"
+
+      # api-admin 롤백 (동일한 로직)
+      - name: Rollback api-admin
+        if: github.event.inputs.service == 'api-admin' || github.event.inputs.service == 'both'
+        run: |
+          # (위와 동일한 로직, api-admin으로 변경)
+          aws ecs describe-task-definition \
+            --task-definition api-admin-task \
+            --query taskDefinition > current-task-def.json
+          
+          jq '.containerDefinitions[0].image = "${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-admin:${{ github.event.inputs.commit_sha }}"' \
+            current-task-def.json > new-task-def.json
+          
+          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection)' \
+            new-task-def.json > final-task-def.json
+          
+          TASK_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://final-task-def.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          
+          aws ecs update-service \
+            --cluster mini-shopping-cluster \
+            --service api-admin-service \
+            --task-definition $TASK_ARN \
+            --force-new-deployment
+          
+          echo "✅ api-admin rolled back to ${{ github.event.inputs.commit_sha }}"
+
+      # 롤백 기록 생성
+      - name: Create rollback record
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🔄 Rollback: ${context.payload.inputs.service} to ${context.payload.inputs.commit_sha.substring(0, 7)}`,
+              body: `## Rollback Information
+            
+              - **Service:** ${context.payload.inputs.service}
+              - **Target Version:** ${context.payload.inputs.commit_sha}
+              - **Reason:** ${context.payload.inputs.reason}
+              - **Executed by:** @${context.actor}
+              - **Time:** ${new Date().toISOString()}
+            
+              ### Next Steps
+              1. Monitor service health
+              2. Verify rollback success
+              3. Investigate root cause
+              `,
+              labels: ['rollback', 'production']
+            });
