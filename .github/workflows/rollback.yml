@@ -242,6 +242,7 @@ jobs:
       - name: Get current date
         id: date
         run: |
+          echo "date=$(TZ=Asia/Seoul date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
           echo "datetime=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
           echo "timestamp=$(TZ=Asia/Seoul date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
 
@@ -249,8 +250,8 @@ jobs:
       - name: Create new release with current state
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: deploy-${{ github.run_number }}
-          name: Deploy #${{ github.run_number }} - ${{ steps.date.outputs.datetime }} (Rollback)
+          tag_name: rollback-${{ steps.date.outputs.timestamp }}
+          name: rollback ${{ github.run_number }} - ${{ steps.date.outputs.datetime }}
           body: |
             ## 🚀 ECS 배포 완료
             
