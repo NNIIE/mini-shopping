@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write   # Release, Tag 생성 등
+
 env:
   JAVA_VERSION: '21'
 
