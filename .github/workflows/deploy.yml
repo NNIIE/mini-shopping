@@ -332,7 +332,7 @@ jobs:
             
             ---
             
-            > 💡 **롤백 가이드**: ECR 태그, Digest, 또는 커밋 SHA를 사용하여 이전 버전으로 롤백할 수 있습니다.
+            > 💡 **롤백 가이드**: ECR 태그를 사용하여 이전 버전으로 롤백할 수 있습니다.
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
