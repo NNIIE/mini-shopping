@@ -33,7 +33,52 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       rollback-success: ${{ steps.wait-deployment.outputs.success }}
+      user-rollback-performed: ${{ steps.track-rollback.outputs.user-rollback }}
+      admin-rollback-performed: ${{ steps.track-rollback.outputs.admin-rollback }}
+      user-previous-tag: ${{ steps.get-previous-versions.outputs.user-tag }}
+      admin-previous-tag: ${{ steps.get-previous-versions.outputs.admin-tag }}
     steps:
+      # 롤백 전 현재 버전 저장
+      - name: Get previous versions
+        id: get-previous-versions
+        run: |
+          echo "📊 롤백 전 버전 확인 중..."
+          
+          # AWS 인증
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region ${{ env.AWS_REGION }}
+          
+          # api-user 현재 버전
+          USER_TASK_DEF=$(aws ecs describe-services \
+            --cluster mini-shopping-cluster \
+            --services api-user-service \
+            --query 'services[0].taskDefinition' \
+            --output text)
+          
+          USER_IMAGE=$(aws ecs describe-task-definition \
+            --task-definition $USER_TASK_DEF \
+            --query 'taskDefinition.containerDefinitions[0].image' \
+            --output text)
+          
+          USER_TAG=$(echo $USER_IMAGE | awk -F':' '{print $NF}')
+          echo "user-tag=$USER_TAG" >> $GITHUB_OUTPUT
+          
+          # api-admin 현재 버전
+          ADMIN_TASK_DEF=$(aws ecs describe-services \
+            --cluster mini-shopping-cluster \
+            --services api-admin-service \
+            --query 'services[0].taskDefinition' \
+            --output text)
+          
+          ADMIN_IMAGE=$(aws ecs describe-task-definition \
+            --task-definition $ADMIN_TASK_DEF \
+            --query 'taskDefinition.containerDefinitions[0].image' \
+            --output text)
+          
+          ADMIN_TAG=$(echo $ADMIN_IMAGE | awk -F':' '{print $NF}')
+          echo "admin-tag=$ADMIN_TAG" >> $GITHUB_OUTPUT
+
       # AWS 인증
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -47,69 +92,108 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # 실제 롤백 수행 여부 추적
+      - name: Track rollback execution
+        id: track-rollback
+        run: |
+          echo "user-rollback=false" >> $GITHUB_OUTPUT
+          echo "admin-rollback=false" >> $GITHUB_OUTPUT
+
       # 이미지 확인 및 롤백 실행
       - name: Execute rollback
         run: |
+          # 롤백 수행 추적 플래그
+          USER_ROLLBACK_DONE="false"
+          ADMIN_ROLLBACK_DONE="false"
+          
           # api-user 롤백
           if [[ "${{ github.event.inputs.service }}" == "api-user" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
             echo "🔄 api-user 롤백 중..."
           
-            # 이미지 확인
-            aws ecr describe-images \
-              --repository-name mini-shopping/api-user \
-              --image-ids imageTag=${{ github.event.inputs.ecr_tag }} || exit 1
+            # 현재 태그와 롤백 태그가 다른 경우에만 실제 롤백 수행
+            if [[ "${{ steps.get-previous-versions.outputs.user-tag }}" != "${{ github.event.inputs.ecr_tag }}" ]]; then
+              # 이미지 확인
+              aws ecr describe-images \
+                --repository-name mini-shopping/api-user \
+                --image-ids imageTag=${{ github.event.inputs.ecr_tag }} || exit 1
           
-            # 태스크 정의 업데이트
-            aws ecs describe-task-definition \
-              --task-definition api-user-task \
-              --query taskDefinition > task-def.json
+              # 태스크 정의 업데이트
+              aws ecs describe-task-definition \
+                --task-definition api-user-task \
+                --query taskDefinition > task-def.json
           
-            jq '.containerDefinitions[0].image = "${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-user:${{ github.event.inputs.ecr_tag }}"' \
-              task-def.json | \
-            jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection)' \
-              > new-task-def.json
+              jq '.containerDefinitions[0].image = "${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-user:${{ github.event.inputs.ecr_tag }}"' \
+                task-def.json | \
+              jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection)' \
+                > new-task-def.json
           
-            TASK_ARN=$(aws ecs register-task-definition \
-              --cli-input-json file://new-task-def.json \
-              --query 'taskDefinition.taskDefinitionArn' \
-              --output text)
+              TASK_ARN=$(aws ecs register-task-definition \
+                --cli-input-json file://new-task-def.json \
+                --query 'taskDefinition.taskDefinitionArn' \
+                --output text)
           
-            aws ecs update-service \
-              --cluster mini-shopping-cluster \
-              --service api-user-service \
-              --task-definition $TASK_ARN \
-              --force-new-deployment
+              aws ecs update-service \
+                --cluster mini-shopping-cluster \
+                --service api-user-service \
+                --task-definition $TASK_ARN \
+                --force-new-deployment
+          
+              USER_ROLLBACK_DONE="true"
+            else
+              echo "⏭️ api-user는 이미 대상 버전입니다. 롤백하지 않습니다."
+            fi
           fi
           
           # api-admin 롤백
           if [[ "${{ github.event.inputs.service }}" == "api-admin" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
             echo "🔄 api-admin 롤백 중..."
           
-            # 이미지 확인
-            aws ecr describe-images \
-              --repository-name mini-shopping/api-admin \
-              --image-ids imageTag=${{ github.event.inputs.ecr_tag }} || exit 1
+            # 현재 태그와 롤백 태그가 다른 경우에만 실제 롤백 수행
+            if [[ "${{ steps.get-previous-versions.outputs.admin-tag }}" != "${{ github.event.inputs.ecr_tag }}" ]]; then
+              # 이미지 확인
+              aws ecr describe-images \
+                --repository-name mini-shopping/api-admin \
+                --image-ids imageTag=${{ github.event.inputs.ecr_tag }} || exit 1
           
-            # 태스크 정의 업데이트
-            aws ecs describe-task-definition \
-              --task-definition api-admin-task \
-              --query taskDefinition > task-def.json
+              # 태스크 정의 업데이트
+              aws ecs describe-task-definition \
+                --task-definition api-admin-task \
+                --query taskDefinition > task-def.json
           
-            jq '.containerDefinitions[0].image = "${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-admin:${{ github.event.inputs.ecr_tag }}"' \
-              task-def.json | \
-            jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection)' \
-              > new-task-def.json
+              jq '.containerDefinitions[0].image = "${{ steps.login-ecr.outputs.registry }}/mini-shopping/api-admin:${{ github.event.inputs.ecr_tag }}"' \
+                task-def.json | \
+              jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection)' \
+                > new-task-def.json
           
-            TASK_ARN=$(aws ecs register-task-definition \
-              --cli-input-json file://new-task-def.json \
-              --query 'taskDefinition.taskDefinitionArn' \
-              --output text)
+              TASK_ARN=$(aws ecs register-task-definition \
+                --cli-input-json file://new-task-def.json \
+                --query 'taskDefinition.taskDefinitionArn' \
+                --output text)
           
-            aws ecs update-service \
-              --cluster mini-shopping-cluster \
-              --service api-admin-service \
-              --task-definition $TASK_ARN \
-              --force-new-deployment
+              aws ecs update-service \
+                --cluster mini-shopping-cluster \
+                --service api-admin-service \
+                --task-definition $TASK_ARN \
+                --force-new-deployment
+          
+              ADMIN_ROLLBACK_DONE="true"
+            else
+              echo "⏭️ api-admin은 이미 대상 버전입니다. 롤백하지 않습니다."
+            fi
+          fi
+          
+          # 롤백 수행 결과를 outputs에 저장
+          echo "user-rollback=$USER_ROLLBACK_DONE" >> rollback-status.txt
+          echo "admin-rollback=$ADMIN_ROLLBACK_DONE" >> rollback-status.txt
+
+      # 롤백 상태 읽기
+      - name: Read rollback status
+        id: rollback-status
+        run: |
+          if [ -f rollback-status.txt ]; then
+            source rollback-status.txt
+            echo "user-rollback=$user_rollback" >> $GITHUB_OUTPUT
+            echo "admin-rollback=$admin_rollback" >> $GITHUB_OUTPUT
           fi
 
       # 배포 완료 대기
@@ -146,11 +230,12 @@ jobs:
           
           SUCCESS="true"
           
-          if [[ "${{ github.event.inputs.service }}" == "api-user" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
+          # 실제로 롤백이 수행된 서비스만 대기
+          if [[ "${{ steps.rollback-status.outputs.user-rollback }}" == "true" ]]; then
             wait_for_service "api-user-service" || SUCCESS="false"
           fi
           
-          if [[ "${{ github.event.inputs.service }}" == "api-admin" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
+          if [[ "${{ steps.rollback-status.outputs.admin-rollback }}" == "true" ]]; then
             wait_for_service "api-admin-service" || SUCCESS="false"
           fi
           
@@ -224,19 +309,6 @@ jobs:
           
           echo "api-admin-tag=$ADMIN_TAG" >> $GITHUB_OUTPUT
           echo "api-admin-digest=$ADMIN_DIGEST" >> $GITHUB_OUTPUT
-          
-          # 롤백 여부 확인
-          if [[ "$USER_TAG" == "${{ github.event.inputs.ecr_tag }}" ]]; then
-            echo "api-user-rollback=true" >> $GITHUB_OUTPUT
-          else
-            echo "api-user-rollback=false" >> $GITHUB_OUTPUT
-          fi
-          
-          if [[ "$ADMIN_TAG" == "${{ github.event.inputs.ecr_tag }}" ]]; then
-            echo "api-admin-rollback=true" >> $GITHUB_OUTPUT
-          else
-            echo "api-admin-rollback=false" >> $GITHUB_OUTPUT
-          fi
 
       # 현재 시간
       - name: Get current date
@@ -251,39 +323,104 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: rollback-${{ steps.date.outputs.timestamp }}
-          name: rollback ${{ github.run_number }} - ${{ steps.date.outputs.datetime }}
+          name: Rollback #${{ github.run_number }} - ${{ steps.date.outputs.datetime }}
           body: |
-            ## 🚀 ECS 배포 완료
-            
-            ### 배포 정보
-            - **배포 시간:** ${{ steps.date.outputs.datetime }} (KST)
-            - **배포 번호:** #${{ github.run_number }}
-            - **배포 타입:** 🔄 롤백 (${{ github.event.inputs.service }})
-            - **롤백 사유:** ${{ github.event.inputs.reason }}
-            
-            ### 배포 결과
-            - **api-user:** ${{ steps.current-versions.outputs.api-user-rollback == 'true' && '🔄 롤백됨' || '✅ 현재 버전 유지' }}
-              - ECR 태그: `${{ steps.current-versions.outputs.api-user-tag }}`
-              - Digest: `${{ steps.current-versions.outputs.api-user-digest }}`
-            
-            - **api-admin:** ${{ steps.current-versions.outputs.api-admin-rollback == 'true' && '🔄 롤백됨' || '✅ 현재 버전 유지' }}
-              - ECR 태그: `${{ steps.current-versions.outputs.api-admin-tag }}`
-              - Digest: `${{ steps.current-versions.outputs.api-admin-digest }}`
+            ## 🔄 롤백 완료
             
             ### 롤백 정보
+            - **롤백 시간:** ${{ steps.date.outputs.datetime }} (KST)
+            - **롤백 번호:** #${{ github.run_number }}
             - **롤백 대상:** ${{ github.event.inputs.service }}
-            - **롤백된 버전:** `${{ github.event.inputs.ecr_tag }}`
+            - **롤백 사유:** ${{ github.event.inputs.reason }}
+            - **요청된 버전:** `${{ github.event.inputs.ecr_tag }}`
+            
+            ### 현재 운영 버전
+            - **api-user:** ${{ needs.rollback.outputs.user-rollback-performed == 'true' && '🔄 롤백됨' || '✅ 변경 없음' }}
+              - 이전 버전: `${{ needs.rollback.outputs.user-previous-tag }}`
+              - 현재 버전: `${{ steps.current-versions.outputs.api-user-tag }}`
+              - Digest: `${{ steps.current-versions.outputs.api-user-digest }}`
+            
+            - **api-admin:** ${{ needs.rollback.outputs.admin-rollback-performed == 'true' && '🔄 롤백됨' || '✅ 변경 없음' }}
+              - 이전 버전: `${{ needs.rollback.outputs.admin-previous-tag }}`
+              - 현재 버전: `${{ steps.current-versions.outputs.api-admin-tag }}`
+              - Digest: `${{ steps.current-versions.outputs.api-admin-digest }}`
+            
+            ### 실행 정보
             - **실행자:** @${{ github.actor }}
-            
-            ### 변경 내역
-            - **변경 타입:** 버전 롤백
-            - **영향 범위:** ${{ github.event.inputs.service }}
-            
-            ### 기타 정보
-            - **릴리즈 작성자:** @${{ github.actor }}
             - **배포 환경:** Production
             - **Actions 링크:** [Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
             
             ---
             
-            > ⚠️ **주의**: 이것은 롤백으로 생성된 릴리즈입니다. 일부 서비스가 이전 버전으로 되돌려졌습니다.
+            > ⚠️ **주의**: 이 릴리즈는 롤백 작업의 결과입니다. 현재 운영 중인 버전을 정확히 반영합니다.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 롤백 이슈 생성
+  create-rollback-issue:
+    name: Create Rollback Issue
+    needs: [rollback, create-current-release]
+    if: needs.rollback.outputs.rollback-success == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 현재 시간
+      - name: Get current date
+        id: date
+        run: |
+          echo "datetime=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+
+      # 이슈 생성
+      - name: Create rollback issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueTitle = `🔄 롤백 완료: ${context.payload.inputs.service} - ${new Date().toISOString().split('T')[0]}`;
+            
+            let rollbackDetails = [];
+            
+            // 실제 롤백된 서비스만 표시
+            if ('${{ needs.rollback.outputs.user-rollback-performed }}' === 'true') {
+              rollbackDetails.push('- **api-user**: `${{ needs.rollback.outputs.user-previous-tag }}` → `${{ github.event.inputs.ecr_tag }}`');
+            }
+            
+            if ('${{ needs.rollback.outputs.admin-rollback-performed }}' === 'true') {
+              rollbackDetails.push('- **api-admin**: `${{ needs.rollback.outputs.admin-previous-tag }}` → `${{ github.event.inputs.ecr_tag }}`');
+            }
+            
+            const issueBody = `## 롤백 상세 정보
+            
+            ### 기본 정보
+            - **롤백 시간**: ${{ steps.date.outputs.datetime }} (KST)
+            - **롤백 실행자**: @${{ github.actor }}
+            - **롤백 대상**: ${{ github.event.inputs.service }}
+            - **롤백 사유**: ${{ github.event.inputs.reason }}
+            
+            ### 롤백된 서비스
+            ${rollbackDetails.length > 0 ? rollbackDetails.join('\n') : '- 실제 롤백된 서비스 없음 (이미 대상 버전이었음)'}
+            
+            ### 관련 링크
+            - [Actions Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - [릴리즈 노트](https://github.com/${{ github.repository }}/releases/latest)
+            
+            ### 체크리스트
+            - [ ] 서비스 정상 동작 확인
+            - [ ] 모니터링 지표 확인
+            
+            ---
+            
+            > 이 이슈는 자동으로 생성되었습니다.
+            `;
+            
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueTitle,
+              body: issueBody,
+              labels: ['rollback', 'production', 'automated'],
+              assignees: ['${{ github.actor }}']
+            });
+            
+            console.log(`Issue created: ${issue.data.html_url}`);
