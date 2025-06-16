@@ -282,13 +282,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: release-${{ steps.date.outputs.timestamp }}
-          name: Release ${{ github.run_number }} - ${{ steps.date.outputs.datetime }}
+          name: Release ${{ github.run_number }}
           body: |
             ## 🚀 ECS 배포 완료
             
             ### 배포 정보
             - **배포 시간:** ${{ steps.date.outputs.datetime }} (KST)
-            - **배포 번호:** #${{ github.run_number }}
             - **커밋 SHA:** ${{ github.sha }}
             
             ### 배포 결과
@@ -332,7 +331,7 @@ jobs:
             
             ---
             
-            > 💡 **롤백 가이드**: ECR 태그, Digest, 또는 커밋 SHA를 사용하여 이전 버전으로 롤백할 수 있습니다.
+            > 💡 **롤백 가이드**: ECR 태그를 사용하여 이전 버전으로 롤백할 수 있습니다.
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
