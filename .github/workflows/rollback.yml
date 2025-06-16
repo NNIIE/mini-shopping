@@ -322,13 +322,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: rollback-${{ steps.date.outputs.timestamp }}
-          name: Rollback #${{ github.run_number }} - ${{ steps.date.outputs.datetime }}
+          name: Rollback ${{ github.run_number }}
           body: |
             ## 🔄 롤백 완료
             
             ### 롤백 정보
             - **롤백 시간:** ${{ steps.date.outputs.datetime }} (KST)
-            - **롤백 번호:** #${{ github.run_number }}
             - **롤백 대상:** ${{ github.event.inputs.service }}
             - **롤백 사유:** ${{ github.event.inputs.reason }}
             - **요청된 버전:** `${{ github.event.inputs.ecr_tag }}`
