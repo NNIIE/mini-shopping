@@ -155,10 +155,10 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       redeploy-success: ${{ steps.wait-deployment.outputs.success }}
-      user-redeployed: ${{ steps.track-redeploy.outputs.user_redeployed }}
-      admin-redeployed: ${{ steps.track-redeploy.outputs.admin_redeployed }}
-      user-new-count: ${{ steps.track-redeploy.outputs.user_new_count }}
-      admin-new-count: ${{ steps.track-redeploy.outputs.admin_new_count }}
+      user-redeployed: ${{ steps.execute-redeploy.outputs.user_redeployed }}
+      admin-redeployed: ${{ steps.execute-redeploy.outputs.admin_redeployed }}
+      user-new-count: ${{ steps.execute-redeploy.outputs.user_new_count }}
+      admin-new-count: ${{ steps.execute-redeploy.outputs.admin_new_count }}
     steps:
       # AWS 인증
       - name: Configure AWS credentials
