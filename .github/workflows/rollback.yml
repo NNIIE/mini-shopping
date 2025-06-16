@@ -33,8 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       rollback-success: ${{ steps.wait-deployment.outputs.success }}
-      user-rollback-performed: ${{ steps.track-rollback.outputs.user-rollback }}
-      admin-rollback-performed: ${{ steps.track-rollback.outputs.admin-rollback }}
+      user-rollback-performed: ${{ steps.rollback-status.outputs.user_rollback }}
+      admin-rollback-performed: ${{ steps.rollback-status.outputs.admin_rollback }}
       user-previous-tag: ${{ steps.get-previous-versions.outputs.user-tag }}
       admin-previous-tag: ${{ steps.get-previous-versions.outputs.admin-tag }}
     steps:
@@ -92,17 +92,10 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 실제 롤백 수행 여부 추적
-      - name: Track rollback execution
-        id: track-rollback
-        run: |
-          echo "user-rollback=false" >> $GITHUB_OUTPUT
-          echo "admin-rollback=false" >> $GITHUB_OUTPUT
-
       # 이미지 확인 및 롤백 실행
       - name: Execute rollback
         run: |
-          # 롤백 수행 추적 플래그
+          # 롤백 수행 추적 플래그 - 언더스코어 사용
           USER_ROLLBACK_DONE="false"
           ADMIN_ROLLBACK_DONE="false"
           
@@ -141,6 +134,7 @@ jobs:
               USER_ROLLBACK_DONE="true"
             else
               echo "⏭️ api-user는 이미 대상 버전입니다. 롤백하지 않습니다."
+              echo "💡 동일 버전 재배포가 필요한 경우 재배포 워크플로우를 사용하세요."
             fi
           fi
           
@@ -179,21 +173,26 @@ jobs:
               ADMIN_ROLLBACK_DONE="true"
             else
               echo "⏭️ api-admin은 이미 대상 버전입니다. 롤백하지 않습니다."
+              echo "💡 동일 버전 재배포가 필요한 경우 재배포 워크플로우를 사용하세요."
             fi
           fi
           
-          # 롤백 수행 결과를 outputs에 저장
-          echo "user-rollback=$USER_ROLLBACK_DONE" >> rollback-status.txt
-          echo "admin-rollback=$ADMIN_ROLLBACK_DONE" >> rollback-status.txt
+          # 롤백 수행 결과를 파일에 저장 - 변수명에 언더스코어 사용
+          echo "user_rollback=$USER_ROLLBACK_DONE" >> rollback-status.txt
+          echo "admin_rollback=$ADMIN_ROLLBACK_DONE" >> rollback-status.txt
 
-      # 롤백 상태 읽기
+      # 롤백 상태 읽기 - 수정된 변수명 사용
       - name: Read rollback status
         id: rollback-status
         run: |
           if [ -f rollback-status.txt ]; then
+            # source 명령어로 파일 읽기 - 이제 변수명이 올바르므로 오류 없음
             source rollback-status.txt
-            echo "user-rollback=$user_rollback" >> $GITHUB_OUTPUT
-            echo "admin-rollback=$admin_rollback" >> $GITHUB_OUTPUT
+            echo "user_rollback=${user_rollback}" >> $GITHUB_OUTPUT
+            echo "admin_rollback=${admin_rollback}" >> $GITHUB_OUTPUT
+          else
+            echo "user_rollback=false" >> $GITHUB_OUTPUT
+            echo "admin_rollback=false" >> $GITHUB_OUTPUT
           fi
 
       # 배포 완료 대기
@@ -231,11 +230,11 @@ jobs:
           SUCCESS="true"
           
           # 실제로 롤백이 수행된 서비스만 대기
-          if [[ "${{ steps.rollback-status.outputs.user-rollback }}" == "true" ]]; then
+          if [[ "${{ steps.rollback-status.outputs.user_rollback }}" == "true" ]]; then
             wait_for_service "api-user-service" || SUCCESS="false"
           fi
           
-          if [[ "${{ steps.rollback-status.outputs.admin-rollback }}" == "true" ]]; then
+          if [[ "${{ steps.rollback-status.outputs.admin_rollback }}" == "true" ]]; then
             wait_for_service "api-admin-service" || SUCCESS="false"
           fi
           
@@ -408,6 +407,7 @@ jobs:
             ### 체크리스트
             - [ ] 서비스 정상 동작 확인
             - [ ] 모니터링 지표 확인
+            - [ ] 관련 팀 공유 완료
             
             ---
             
