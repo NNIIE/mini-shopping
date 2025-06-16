@@ -217,7 +217,7 @@ jobs:
             fi
           
             if redeploy_service "api-user-service" "$USER_DESIRED_COUNT"; then
-              echo "user-redeployed=true" >> redeploy-status.txt
+              echo "user_redeployed=true" >> redeploy-status.txt
             fi
           fi
           
@@ -231,7 +231,7 @@ jobs:
             fi
           
             if redeploy_service "api-admin-service" "$ADMIN_DESIRED_COUNT"; then
-              echo "admin-redeployed=true" >> redeploy-status.txt
+              echo "admin_redeployed=true" >> redeploy-status.txt
             fi
           fi
 
@@ -241,8 +241,8 @@ jobs:
         run: |
           if [ -f redeploy-status.txt ]; then
             source redeploy-status.txt
-            echo "user-redeployed=${user_redeployed:-false}" >> $GITHUB_OUTPUT
-            echo "admin-redeployed=${admin_redeployed:-false}" >> $GITHUB_OUTPUT
+            echo "user_redeployed=${user_redeployed:-false}" >> $GITHUB_OUTPUT
+            echo "admin_redeployed=${admin_redeployed:-false}" >> $GITHUB_OUTPUT
           fi
 
       # 배포 완료 대기
@@ -291,11 +291,11 @@ jobs:
           SUCCESS="true"
           
           # 재배포된 서비스만 대기
-          if [[ "${{ steps.redeploy-status.outputs.user-redeployed }}" == "true" ]]; then
+          if [[ "${{ steps.redeploy-status.outputs.user_redeployed }}" == "true" ]]; then
             wait_for_service "api-user-service" || SUCCESS="false"
           fi
           
-          if [[ "${{ steps.redeploy-status.outputs.admin-redeployed }}" == "true" ]]; then
+          if [[ "${{ steps.redeploy-status.outputs.admin_redeployed }}" == "true" ]]; then
             wait_for_service "api-admin-service" || SUCCESS="false"
           fi
           
