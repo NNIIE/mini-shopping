@@ -86,7 +86,7 @@ jobs:
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      # ECR 라이프사이클 정책 설정 - 최신 5개 유지 + 3일 이상된 이미지 삭제
+      # ECR 라이프사이클 정책 설정 - 최신 5개만 유지
       - name: Set ECR lifecycle policy for api-user
         run: |
           aws ecr put-lifecycle-policy \
@@ -95,24 +95,11 @@ jobs:
               "rules": [
                 {
                   "rulePriority": 1,
-                  "description": "Keep last 5 images",
+                  "description": "Keep only last 5 images",
                   "selection": {
                     "tagStatus": "any",
                     "countType": "imageCountMoreThan",
                     "countNumber": 5
-                  },
-                  "action": {
-                    "type": "expire"
-                  }
-                },
-                {
-                  "rulePriority": 2,
-                  "description": "Delete images older than 3 days",
-                  "selection": {
-                    "tagStatus": "any",
-                    "countType": "sinceImagePushed",
-                    "countUnit": "days",
-                    "countNumber": 3
                   },
                   "action": {
                     "type": "expire"
@@ -192,7 +179,7 @@ jobs:
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      # ECR 라이프사이클 정책 설정 - 최신 5개 유지 + 3일 이상된 이미지 삭제
+      # ECR 라이프사이클 정책 설정 - 최신 5개만 유지
       - name: Set ECR lifecycle policy for api-admin
         run: |
           aws ecr put-lifecycle-policy \
@@ -201,24 +188,11 @@ jobs:
               "rules": [
                 {
                   "rulePriority": 1,
-                  "description": "Keep last 5 images",
+                  "description": "Keep only last 5 images",
                   "selection": {
                     "tagStatus": "any",
                     "countType": "imageCountMoreThan",
                     "countNumber": 5
-                  },
-                  "action": {
-                    "type": "expire"
-                  }
-                },
-                {
-                  "rulePriority": 2,
-                  "description": "Delete images older than 3 days",
-                  "selection": {
-                    "tagStatus": "any",
-                    "countType": "sinceImagePushed",
-                    "countUnit": "days",
-                    "countNumber": 3
                   },
                   "action": {
                     "type": "expire"
