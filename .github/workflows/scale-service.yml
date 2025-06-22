@@ -1,10 +1,10 @@
-name: Redeploy ECS Service
+name: Scale ECS Service
 
 on:
   workflow_dispatch:
     inputs:
       service:
-        description: '재배포할 서비스 선택'
+        description: '스케일링할 서비스 선택'
         required: true
         type: choice
         options:
@@ -12,11 +12,11 @@ on:
           - api-admin
           - both
       reason:
-        description: '재배포 사유'
+        description: '스케일링/재시작 사유'
         required: true
         type: string
       force_new_deployment:
-        description: '강제 새 배포 (기본: true)'
+        description: '컨테이너 강제 재시작 (기본: true)'
         required: false
         type: boolean
         default: true
