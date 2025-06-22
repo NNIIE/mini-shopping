@@ -86,6 +86,28 @@ jobs:
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
+      # ECR 라이프사이클 정책 설정 - 최신 5개만 유지
+      - name: Set ECR lifecycle policy for api-user
+        run: |
+          aws ecr put-lifecycle-policy \
+            --repository-name mini-shopping/api-user \
+            --lifecycle-policy-text '{
+              "rules": [
+                {
+                  "rulePriority": 1,
+                  "description": "Keep only last 5 images",
+                  "selection": {
+                    "tagStatus": "any",
+                    "countType": "imageCountMoreThan",
+                    "countNumber": 5
+                  },
+                  "action": {
+                    "type": "expire"
+                  }
+                }
+              ]
+            }'
+
       # 기존 ECS 태스크 정의 내려받기 (변경 준비)
       - name: Download current api-user task definition
         run: |
@@ -157,6 +179,28 @@ jobs:
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
+      # ECR 라이프사이클 정책 설정 - 최신 5개만 유지
+      - name: Set ECR lifecycle policy for api-admin
+        run: |
+          aws ecr put-lifecycle-policy \
+            --repository-name mini-shopping/api-admin \
+            --lifecycle-policy-text '{
+              "rules": [
+                {
+                  "rulePriority": 1,
+                  "description": "Keep only last 5 images",
+                  "selection": {
+                    "tagStatus": "any",
+                    "countType": "imageCountMoreThan",
+                    "countNumber": 5
+                  },
+                  "action": {
+                    "type": "expire"
+                  }
+                }
+              ]
+            }'
+
       # 기존 ECS 태스크 정의 내려받기 (변경 준비)
       - name: Download current api-admin task definition
         run: |
@@ -212,6 +256,38 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
+
+      # 현재 실행 중인 태스크 개수 가져오기
+      - name: Get running task counts
+        id: task-counts
+        run: |
+          echo "📊 현재 실행 중인 태스크 개수 확인 중..."
+          
+          # api-user 태스크 개수
+          USER_SERVICE_INFO=$(aws ecs describe-services \
+            --cluster mini-shopping-cluster \
+            --services api-user-service \
+            --query 'services[0]' \
+            --output json)
+          
+          USER_RUNNING_COUNT=$(echo $USER_SERVICE_INFO | jq -r '.runningCount')
+          USER_DESIRED_COUNT=$(echo $USER_SERVICE_INFO | jq -r '.desiredCount')
+          
+          echo "user-running=$USER_RUNNING_COUNT" >> $GITHUB_OUTPUT
+          echo "user-desired=$USER_DESIRED_COUNT" >> $GITHUB_OUTPUT
+          
+          # api-admin 태스크 개수
+          ADMIN_SERVICE_INFO=$(aws ecs describe-services \
+            --cluster mini-shopping-cluster \
+            --services api-admin-service \
+            --query 'services[0]' \
+            --output json)
+          
+          ADMIN_RUNNING_COUNT=$(echo $ADMIN_SERVICE_INFO | jq -r '.runningCount')
+          ADMIN_DESIRED_COUNT=$(echo $ADMIN_SERVICE_INFO | jq -r '.desiredCount')
+          
+          echo "admin-running=$ADMIN_RUNNING_COUNT" >> $GITHUB_OUTPUT
+          echo "admin-desired=$ADMIN_DESIRED_COUNT" >> $GITHUB_OUTPUT
 
       # PR 정보 추출 (커밋 메시지에서)
       - name: Extract PR Info
@@ -294,10 +370,13 @@ jobs:
             - **api-user:** ${{ needs.deploy-api-user.result == 'success' && '✅ 성공' || needs.deploy-api-user.result == 'skipped' && '⏭️ 스킵' || '❌ 실패' }}
               - ECR 태그: `${{ github.sha }}`
               - Digest: `${{ steps.digest_user.outputs.digest }}`
+              - **실행 중인 태스크:** ${{ steps.task-counts.outputs.user-running }} / ${{ steps.task-counts.outputs.user-desired }}
+            
             
             - **api-admin:** ${{ needs.deploy-api-admin.result == 'success' && '✅ 성공' || needs.deploy-api-admin.result == 'skipped' && '⏭️ 스킵' || '❌ 실패' }}
               - ECR 태그: `${{ github.sha }}`
               - Digest: `${{ steps.digest_admin.outputs.digest }}`
+              - **실행 중인 태스크:** ${{ steps.task-counts.outputs.admin-running }} / ${{ steps.task-counts.outputs.admin-desired }}
             
             ### PR 정보
             - **PR 번호:** ${{ steps.prinfo.outputs.number && format('#{0}', steps.prinfo.outputs.number) || 'N/A' }}

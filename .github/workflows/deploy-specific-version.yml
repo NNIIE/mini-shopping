@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       service:
-        description: '롤백할 서비스 선택'
+        description: '배포할 서비스 선택'
         required: true
         type: choice
         options:
@@ -12,13 +12,22 @@ on:
           - api-admin
           - both
       ecr_tag:
-        description: '롤백할 ECR 태그 (릴리즈 노트에서 복사)'
+        description: '배포할 ECR 태그 (릴리즈 노트에서 복사)'
         required: true
         type: string
       reason:
-        description: '롤백 사유'
+        description: '버전 변경 사유'
         required: true
         type: string
+      deployment_type:
+        description: '배포 유형'
+        required: true
+        type: choice
+        options:
+          - rollback
+          - rollforward
+          - hotfix
+          - manual
 
 permissions:
   contents: write
@@ -259,18 +268,22 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
 
-      # 현재 운영 중인 버전 정보 수집
-      - name: Get current running versions
+      # 현재 운영 중인 버전 정보 및 태스크 개수 수집
+      - name: Get current running versions and task counts
         id: current-versions
         run: |
-          echo "📊 현재 운영 버전 확인 중..."
+          echo "📊 현재 운영 버전 및 태스크 상태 확인 중..."
           
           # api-user 현재 정보
-          USER_TASK_DEF=$(aws ecs describe-services \
+          USER_SERVICE_INFO=$(aws ecs describe-services \
             --cluster mini-shopping-cluster \
             --services api-user-service \
-            --query 'services[0].taskDefinition' \
-            --output text)
+            --query 'services[0]' \
+            --output json)
+          
+          USER_TASK_DEF=$(echo $USER_SERVICE_INFO | jq -r '.taskDefinition')
+          USER_RUNNING_COUNT=$(echo $USER_SERVICE_INFO | jq -r '.runningCount')
+          USER_DESIRED_COUNT=$(echo $USER_SERVICE_INFO | jq -r '.desiredCount')
           
           USER_IMAGE=$(aws ecs describe-task-definition \
             --task-definition $USER_TASK_DEF \
@@ -286,13 +299,23 @@ jobs:
           
           echo "api-user-tag=$USER_TAG" >> $GITHUB_OUTPUT
           echo "api-user-digest=$USER_DIGEST" >> $GITHUB_OUTPUT
+          echo "api-user-running=$USER_RUNNING_COUNT" >> $GITHUB_OUTPUT
+          echo "api-user-desired=$USER_DESIRED_COUNT" >> $GITHUB_OUTPUT
+          
+          echo "✅ api-user 현재 상태:"
+          echo "   - 버전: $USER_TAG"
+          echo "   - 실행 중: $USER_RUNNING_COUNT / 원하는 수: $USER_DESIRED_COUNT"
           
           # api-admin 현재 정보
-          ADMIN_TASK_DEF=$(aws ecs describe-services \
+          ADMIN_SERVICE_INFO=$(aws ecs describe-services \
             --cluster mini-shopping-cluster \
             --services api-admin-service \
-            --query 'services[0].taskDefinition' \
-            --output text)
+            --query 'services[0]' \
+            --output json)
+          
+          ADMIN_TASK_DEF=$(echo $ADMIN_SERVICE_INFO | jq -r '.taskDefinition')
+          ADMIN_RUNNING_COUNT=$(echo $ADMIN_SERVICE_INFO | jq -r '.runningCount')
+          ADMIN_DESIRED_COUNT=$(echo $ADMIN_SERVICE_INFO | jq -r '.desiredCount')
           
           ADMIN_IMAGE=$(aws ecs describe-task-definition \
             --task-definition $ADMIN_TASK_DEF \
@@ -308,6 +331,12 @@ jobs:
           
           echo "api-admin-tag=$ADMIN_TAG" >> $GITHUB_OUTPUT
           echo "api-admin-digest=$ADMIN_DIGEST" >> $GITHUB_OUTPUT
+          echo "api-admin-running=$ADMIN_RUNNING_COUNT" >> $GITHUB_OUTPUT
+          echo "api-admin-desired=$ADMIN_DESIRED_COUNT" >> $GITHUB_OUTPUT
+          
+          echo "✅ api-admin 현재 상태:"
+          echo "   - 버전: $ADMIN_TAG"
+          echo "   - 실행 중: $ADMIN_RUNNING_COUNT / 원하는 수: $ADMIN_DESIRED_COUNT"
 
       # 현재 시간
       - name: Get current date
@@ -336,11 +365,13 @@ jobs:
             - **api-user:** ${{ needs.rollback.outputs.user-rollback-performed == 'true' && '🔄 롤백됨' || '✅ 변경 없음' }}
               - 이전 버전: `${{ needs.rollback.outputs.user-previous-tag }}`
               - 현재 버전: `${{ steps.current-versions.outputs.api-user-tag }}`
+              - **실행 중인 태스크:** ${{ steps.current-versions.outputs.api-user-running }} / ${{ steps.current-versions.outputs.api-user-desired }}
               - Digest: `${{ steps.current-versions.outputs.api-user-digest }}`
             
             - **api-admin:** ${{ needs.rollback.outputs.admin-rollback-performed == 'true' && '🔄 롤백됨' || '✅ 변경 없음' }}
               - 이전 버전: `${{ needs.rollback.outputs.admin-previous-tag }}`
               - 현재 버전: `${{ steps.current-versions.outputs.api-admin-tag }}`
+              - **실행 중인 태스크:** ${{ steps.current-versions.outputs.api-admin-running }} / ${{ steps.current-versions.outputs.api-admin-desired }}
               - Digest: `${{ steps.current-versions.outputs.api-admin-digest }}`
             
             ### 실행 정보

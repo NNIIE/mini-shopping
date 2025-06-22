@@ -1,10 +1,10 @@
-name: Redeploy ECS Service
+name: Scale ECS Service
 
 on:
   workflow_dispatch:
     inputs:
       service:
-        description: '재배포할 서비스 선택'
+        description: '스케일링할 서비스 선택'
         required: true
         type: choice
         options:
@@ -12,11 +12,11 @@ on:
           - api-admin
           - both
       reason:
-        description: '재배포 사유'
+        description: '스케일링/재시작 사유'
         required: true
         type: string
       force_new_deployment:
-        description: '강제 새 배포 (기본: true)'
+        description: '컨테이너 강제 재시작 (기본: true)'
         required: false
         type: boolean
         default: true
@@ -323,8 +323,10 @@ jobs:
     outputs:
       user-final-tag: ${{ steps.get-final-versions.outputs.user-tag }}
       user-final-count: ${{ steps.get-final-versions.outputs.user-count }}
+      user-running-count: ${{ steps.get-final-versions.outputs.user-running }}
       admin-final-tag: ${{ steps.get-final-versions.outputs.admin-tag }}
       admin-final-count: ${{ steps.get-final-versions.outputs.admin-count }}
+      admin-running-count: ${{ steps.get-final-versions.outputs.admin-running }}
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -348,6 +350,7 @@ jobs:
           
             USER_TASK_DEF=$(echo $SERVICE_INFO | jq -r '.taskDefinition')
             USER_DESIRED_COUNT=$(echo $SERVICE_INFO | jq -r '.desiredCount')
+            USER_RUNNING_COUNT=$(echo $SERVICE_INFO | jq -r '.runningCount')
           
             USER_IMAGE=$(aws ecs describe-task-definition \
               --task-definition $USER_TASK_DEF \
@@ -358,9 +361,11 @@ jobs:
           
             echo "user-tag=$USER_TAG" >> $GITHUB_OUTPUT
             echo "user-count=$USER_DESIRED_COUNT" >> $GITHUB_OUTPUT
+            echo "user-running=$USER_RUNNING_COUNT" >> $GITHUB_OUTPUT
           else
             echo "user-tag=N/A" >> $GITHUB_OUTPUT
             echo "user-count=N/A" >> $GITHUB_OUTPUT
+            echo "user-running=N/A" >> $GITHUB_OUTPUT
           fi
           
           # api-admin 최종 상태
@@ -373,6 +378,7 @@ jobs:
           
             ADMIN_TASK_DEF=$(echo $SERVICE_INFO | jq -r '.taskDefinition')
             ADMIN_DESIRED_COUNT=$(echo $SERVICE_INFO | jq -r '.desiredCount')
+            ADMIN_RUNNING_COUNT=$(echo $SERVICE_INFO | jq -r '.runningCount')
           
             ADMIN_IMAGE=$(aws ecs describe-task-definition \
               --task-definition $ADMIN_TASK_DEF \
@@ -383,9 +389,11 @@ jobs:
           
             echo "admin-tag=$ADMIN_TAG" >> $GITHUB_OUTPUT
             echo "admin-count=$ADMIN_DESIRED_COUNT" >> $GITHUB_OUTPUT
+            echo "admin-running=$ADMIN_RUNNING_COUNT" >> $GITHUB_OUTPUT
           else
             echo "admin-tag=N/A" >> $GITHUB_OUTPUT
             echo "admin-count=N/A" >> $GITHUB_OUTPUT
+            echo "admin-running=N/A" >> $GITHUB_OUTPUT
           fi
 
   # 릴리즈 노트 생성
@@ -425,11 +433,13 @@ jobs:
             - **api-user:** ${{ needs.redeploy.outputs.user-redeployed == 'true' && '🔄 재배포됨' || '⏭️ 스킵' }}
               - 버전: `${{ needs.collect-current-state.outputs.user-current-tag }}` (변경 없음)
               - 태스크 수: ${{ needs.collect-current-state.outputs.user-current-count }} → ${{ needs.redeploy.outputs.user-new-count }}
+              - **실행 중인 태스크:** ${{ needs.collect-post-state.outputs.user-running-count }} / ${{ needs.collect-post-state.outputs.user-final-count }}
               - Digest: `${{ needs.collect-current-state.outputs.user-current-digest }}`
             
             - **api-admin:** ${{ needs.redeploy.outputs.admin-redeployed == 'true' && '🔄 재배포됨' || '⏭️ 스킵' }}
               - 버전: `${{ needs.collect-current-state.outputs.admin-current-tag }}` (변경 없음)
               - 태스크 수: ${{ needs.collect-current-state.outputs.admin-current-count }} → ${{ needs.redeploy.outputs.admin-new-count }}
+              - **실행 중인 태스크:** ${{ needs.collect-post-state.outputs.admin-running-count }} / ${{ needs.collect-post-state.outputs.admin-final-count }}
               - Digest: `${{ needs.collect-current-state.outputs.admin-current-digest }}`
             
             ### 실행 정보
