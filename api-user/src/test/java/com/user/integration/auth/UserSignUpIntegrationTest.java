@@ -1,10 +1,10 @@
 package com.user.integration.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.storage.account.Account;
-import com.storage.account.AccountRepository;
-import com.storage.user.User;
-import com.storage.user.UserRepository;
+import com.relation.account.Account;
+import com.relation.account.AccountRepository;
+import com.relation.user.User;
+import com.relation.user.UserRepository;
 import com.user.exception.BusinessException;
 import com.user.exception.ErrorCode;
 import com.user.service.PasswordEncoder;

@@ -1,12 +1,12 @@
 package com.user.unit.order;
 
-import com.storage.order.Order;
-import com.storage.order.OrderProduct;
-import com.storage.order.OrderProductRepository;
-import com.storage.order.OrderRepository;
-import com.storage.product.Product;
-import com.storage.product.ProductRepository;
-import com.storage.user.User;
+import com.relation.order.Order;
+import com.relation.order.OrderProduct;
+import com.relation.order.OrderProductRepository;
+import com.relation.order.OrderRepository;
+import com.relation.product.Product;
+import com.relation.product.ProductRepository;
+import com.relation.user.User;
 import com.user.fixture.UserFixture;
 import com.user.service.OrderService;
 import com.user.web.request.order.CreateOrderRequest;

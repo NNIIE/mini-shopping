@@ -1,6 +1,6 @@
 package com.admin.security;
 
-import com.storage.admin.Admin;
+import com.relation.admin.Admin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

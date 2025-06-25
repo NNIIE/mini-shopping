@@ -1,6 +1,6 @@
 package com.admin.fixture;
 
-import com.storage.category.Category;
+import com.relation.category.Category;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class CategoryFixture {

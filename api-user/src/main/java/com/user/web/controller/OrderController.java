@@ -1,6 +1,6 @@
 package com.user.web.controller;
 
-import com.storage.user.User;
+import com.relation.user.User;
 import com.user.principal.CurrentUser;
 import com.user.service.OrderService;
 import com.user.web.request.order.CreateOrderRequest;

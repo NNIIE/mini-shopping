@@ -1,6 +1,6 @@
 package com.user.jwt;
 
-import com.storage.enums.TokenType;
+import com.relation.enums.TokenType;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;

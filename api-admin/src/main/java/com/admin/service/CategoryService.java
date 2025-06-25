@@ -2,8 +2,8 @@ package com.admin.service;
 
 import com.admin.exception.BusinessException;
 import com.admin.exception.ErrorCode;
-import com.storage.category.Category;
-import com.storage.category.CategoryRepository;
+import com.relation.category.Category;
+import com.relation.category.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

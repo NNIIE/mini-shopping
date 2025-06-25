@@ -2,8 +2,8 @@ package com.admin.fixture;
 
 import com.admin.web.request.brand.CreateBrandRequest;
 import com.admin.web.request.brand.UpdateBrandRequest;
-import com.storage.admin.Admin;
-import com.storage.brand.Brand;
+import com.relation.admin.Admin;
+import com.relation.brand.Brand;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class BrandFixture {

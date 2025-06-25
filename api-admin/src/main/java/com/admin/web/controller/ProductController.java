@@ -4,7 +4,7 @@ import com.admin.service.ProductService;
 import com.admin.web.request.product.CreateProductRequest;
 import com.admin.web.request.product.UpdateProductRequest;
 import com.admin.web.response.product.ProductResponse;
-import com.storage.product.Product;
+import com.relation.product.Product;
 import com.support.response.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

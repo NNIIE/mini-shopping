@@ -1,10 +1,10 @@
 package com.user.domain.order;
 
-import com.storage.enums.OrderStatus;
-import com.storage.order.Order;
-import com.storage.order.OrderProduct;
-import com.storage.product.Product;
-import com.storage.user.User;
+import com.relation.enums.OrderStatus;
+import com.relation.order.Order;
+import com.relation.order.OrderProduct;
+import com.relation.product.Product;
+import com.relation.user.User;
 
 public class OrderFactory {
 
