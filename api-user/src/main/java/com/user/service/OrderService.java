@@ -1,12 +1,12 @@
 package com.user.service;
 
-import com.storage.order.Order;
-import com.storage.order.OrderProduct;
-import com.storage.order.OrderProductRepository;
-import com.storage.order.OrderRepository;
-import com.storage.product.Product;
-import com.storage.product.ProductRepository;
-import com.storage.user.User;
+import com.relation.order.Order;
+import com.relation.order.OrderProduct;
+import com.relation.order.OrderProductRepository;
+import com.relation.order.OrderRepository;
+import com.relation.product.Product;
+import com.relation.product.ProductRepository;
+import com.relation.user.User;
 import com.user.domain.order.OrderFactory;
 import com.user.exception.BusinessException;
 import com.user.exception.ErrorCode;

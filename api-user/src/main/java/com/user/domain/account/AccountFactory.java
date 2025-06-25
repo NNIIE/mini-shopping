@@ -1,8 +1,8 @@
 package com.user.domain.account;
 
-import com.storage.account.Account;
-import com.storage.enums.AccountStatus;
-import com.storage.enums.UserRole;
+import com.relation.account.Account;
+import com.relation.enums.AccountStatus;
+import com.relation.enums.UserRole;
 
 public class AccountFactory {
 

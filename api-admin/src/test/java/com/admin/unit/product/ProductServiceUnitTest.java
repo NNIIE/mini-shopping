@@ -1,6 +1,5 @@
 package com.admin.unit.product;
 
-import com.admin.domain.ProductUpdater;
 import com.admin.fixture.AdminFixture;
 import com.admin.fixture.BrandFixture;
 import com.admin.fixture.CategoryFixture;
@@ -10,10 +9,10 @@ import com.admin.service.CategoryService;
 import com.admin.service.ProductService;
 import com.admin.web.request.product.CreateProductRequest;
 import com.admin.web.request.product.UpdateProductRequest;
-import com.storage.brand.Brand;
-import com.storage.category.Category;
-import com.storage.product.Product;
-import com.storage.product.ProductRepository;
+import com.relation.brand.Brand;
+import com.relation.category.Category;
+import com.relation.product.Product;
+import com.relation.product.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;

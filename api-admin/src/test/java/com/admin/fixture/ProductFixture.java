@@ -2,9 +2,9 @@ package com.admin.fixture;
 
 import com.admin.web.request.product.CreateProductRequest;
 import com.admin.web.request.product.UpdateProductRequest;
-import com.storage.brand.Brand;
-import com.storage.category.Category;
-import com.storage.product.Product;
+import com.relation.brand.Brand;
+import com.relation.category.Category;
+import com.relation.product.Product;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;

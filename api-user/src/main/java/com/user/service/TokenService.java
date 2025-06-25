@@ -1,6 +1,6 @@
 package com.user.service;
 
-import com.storage.enums.TokenType;
+import com.relation.enums.TokenType;
 import com.user.exception.BusinessException;
 import com.user.exception.ErrorCode;
 import com.user.jwt.JwtTokenProvider;

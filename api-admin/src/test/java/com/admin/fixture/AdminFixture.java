@@ -2,10 +2,10 @@ package com.admin.fixture;
 
 import com.admin.web.request.auth.AdminSignInRequest;
 import com.admin.web.request.auth.AdminSignUpRequest;
-import com.storage.account.Account;
-import com.storage.admin.Admin;
-import com.storage.enums.AccountStatus;
-import com.storage.enums.UserRole;
+import com.relation.account.Account;
+import com.relation.admin.Admin;
+import com.relation.enums.AccountStatus;
+import com.relation.enums.UserRole;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class AdminFixture {

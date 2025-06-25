@@ -1,7 +1,7 @@
 package com.user.unit.auth;
 
-import com.storage.user.User;
-import com.storage.user.UserRepository;
+import com.relation.user.User;
+import com.relation.user.UserRepository;
 import com.user.exception.BusinessException;
 import com.user.exception.ErrorCode;
 import com.user.fixture.TokenFixture;

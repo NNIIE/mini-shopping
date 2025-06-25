@@ -1,7 +1,7 @@
 package com.admin.domain;
 
 import com.admin.web.request.product.UpdateProductRequest;
-import com.storage.product.Product;
+import com.relation.product.Product;
 
 public class ProductUpdater {
 

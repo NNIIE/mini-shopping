@@ -1,9 +1,9 @@
 package com.user.service;
 
-import com.storage.account.Account;
-import com.storage.account.AccountRepository;
-import com.storage.user.User;
-import com.storage.user.UserRepository;
+import com.relation.account.Account;
+import com.relation.account.AccountRepository;
+import com.relation.user.User;
+import com.relation.user.UserRepository;
 import com.user.domain.account.AccountFactory;
 import com.user.domain.user.UserFactory;
 import com.user.exception.BusinessException;

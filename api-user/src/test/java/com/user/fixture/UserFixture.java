@@ -1,9 +1,9 @@
 package com.user.fixture;
 
-import com.storage.account.Account;
-import com.storage.enums.AccountStatus;
-import com.storage.enums.UserRole;
-import com.storage.user.User;
+import com.relation.account.Account;
+import com.relation.enums.AccountStatus;
+import com.relation.enums.UserRole;
+import com.relation.user.User;
 import com.user.web.request.auth.UserSignInRequest;
 import com.user.web.request.auth.UserSignUpRequest;
 import org.springframework.test.util.ReflectionTestUtils;

@@ -1,7 +1,7 @@
 package com.user.domain.user;
 
-import com.storage.account.Account;
-import com.storage.user.User;
+import com.relation.account.Account;
+import com.relation.user.User;
 
 public class UserFactory {
 

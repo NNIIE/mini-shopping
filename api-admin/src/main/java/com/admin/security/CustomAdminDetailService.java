@@ -2,8 +2,8 @@ package com.admin.security;
 
 import com.admin.exception.BusinessException;
 import com.admin.exception.ErrorCode;
-import com.storage.admin.Admin;
-import com.storage.admin.AdminRepository;
+import com.relation.admin.Admin;
+import com.relation.admin.AdminRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

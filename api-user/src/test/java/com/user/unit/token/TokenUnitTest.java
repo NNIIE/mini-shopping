@@ -1,6 +1,6 @@
 package com.user.unit.token;
 
-import com.storage.enums.TokenType;
+import com.relation.enums.TokenType;
 import com.user.exception.BusinessException;
 import com.user.jwt.JwtTokenProvider;
 import com.user.service.TokenService;
