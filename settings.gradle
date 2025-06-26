@@ -3,4 +3,5 @@ include 'api-admin'
 include 'api-user'
 include 'data'
 include 'support'
+include 'file-storage'
 

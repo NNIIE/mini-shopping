@@ -44,4 +44,13 @@ public class GlobalExceptionHandler {
             .body(response);
     }
 
+    @ExceptionHandler(ExternalException.class)
+    public void handleExternalException(
+        final ExternalException ex,
+        final HttpServletRequest request
+    ) {
+        log.error("External Error: {}, URI: {}",
+            ex.getMessage(), request.getRequestURI());
+    }
+
 }
