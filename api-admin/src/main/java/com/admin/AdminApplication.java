@@ -12,7 +12,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @ComponentScan(basePackages = {
     "com.admin",
     "com.relation",
-    "com.support"
+    "com.support",
+    "com.s3"
 })
 public class AdminApplication {
 

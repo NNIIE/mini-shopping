@@ -3,4 +3,16 @@ server:
 spring:
   profiles:
     active: local
+aws:
+  access-key: AKIAZU7LY37R2MK6DK3K
+  secret-key: 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
+  region: ap-northeast-2
+  s3:
+    region: ap-northeast-2
+    bucket:
+      original: mini-shopping-images-origin
+      thumbnail: mini-shopping-images-thumbnail
+  sqs:
+    queue:
+      image-processed: https://sqs.ap-northeast-2.amazonaws.com/663530037219/mini-shopping-image-processed
 

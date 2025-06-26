@@ -4,10 +4,13 @@ jar.enabled = false
 dependencies {
     implementation(project(":data"))
     implementation(project(":support"))
+    implementation(project(":file-storage"))
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
+    implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:3.0.4')
+    implementation('io.awspring.cloud:spring-cloud-aws-starter-sqs')
 
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:mysql'

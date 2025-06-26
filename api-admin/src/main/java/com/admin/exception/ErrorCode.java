@@ -16,6 +16,8 @@ public enum ErrorCode {
     CATEGORY_NOT_FOUND(5001, "존재하지 않는 카테고리입니다."),
 
     PRODUCT_NOT_FOUND(6001, "존재하지 않는 상품입니다."),
+
+    MESSAGE_QUEUE_ERROR(7001, "메시지 큐 오류"),
     ;
 
     private final int code;
