@@ -4,8 +4,8 @@ spring:
   profiles:
     active: local
 aws:
-  access-key: AKIAZU7LY37R2MK6DK3K
-  secret-key: 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
+  access-key: ${AWS_ACCESS_KEY}
+  secret-key: ${AWS_SECRET_KEY}
   region: ap-northeast-2
   s3:
     region: ap-northeast-2
