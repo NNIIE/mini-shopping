@@ -29,13 +29,13 @@ jobs:
           filters: |
             api-user:
               - 'api-user/**'
-              - 'storage/**'
+              - 'data/**'
               - 'support/**'
               - 'build.gradle'
               - 'settings.gradle'
             api-admin:
               - 'api-admin/**'
-              - 'storage/**'
+              - 'data/**'
               - 'support/**'
               - 'build.gradle'
               - 'settings.gradle'
@@ -314,11 +314,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 공통 모듈(storage, support) 변경 감지
-      - name: Detect if storage/support changed
+      # 공통 모듈(data, support) 변경 감지
+      - name: Detect if data/support changed
         id: common_change
         run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -qE '^storage/|^support/'; then
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -qE '^data/|^support/'; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT

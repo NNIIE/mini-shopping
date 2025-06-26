@@ -23,13 +23,13 @@ jobs:
           filters: |
             api-user:
               - 'api-user/**'
-              - 'storage/**'
+              - 'data/**'
               - 'support/**'
               - 'build.gradle'
               - 'settings.gradle'
             api-admin:
               - 'api-admin/**'
-              - 'storage/**'
+              - 'data/**'
               - 'support/**'
               - 'build.gradle'
               - 'settings.gradle'

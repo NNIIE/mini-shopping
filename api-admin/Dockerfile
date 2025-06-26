@@ -14,7 +14,7 @@ COPY gradlew ./
 # 각 모듈의 build.gradle 복사
 COPY api-admin/build.gradle ./api-admin/
 COPY api-user/build.gradle ./api-user/
-COPY storage/build.gradle ./storage/
+COPY data/build.gradle ./data/
 COPY support/build.gradle ./support/
 
 # 의존성만 먼저 다운로드 (캐시 최적화)
