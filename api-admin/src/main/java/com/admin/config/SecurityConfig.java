@@ -53,7 +53,7 @@ public class SecurityConfig {
                 "/admin/actuator/health",
                 "/admin/signIn",
                 "/admin/signUp",
-                "/admin/image/**"
+                "/admin/image/**"   // test 단계
             ).permitAll()
             .requestMatchers("/admin/**").hasRole("ADMIN")
             .anyRequest().authenticated();
