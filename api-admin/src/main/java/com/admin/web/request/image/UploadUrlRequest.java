@@ -7,8 +7,9 @@ import lombok.ToString;
 @ToString
 public class UploadUrlRequest {
 
-    private Long productId; // 상품 ID
-    private String fileName; // 업로드할 파일명
-    private String contentType; // 파일의 MIME 타입 (예: image/jpeg, image/png)
+    private Long productId;
+    private String fileName;
+    private String contentType;
+    private boolean includeThumbnail;
 
 }

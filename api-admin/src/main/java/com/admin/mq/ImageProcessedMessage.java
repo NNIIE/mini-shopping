@@ -8,16 +8,13 @@ public record ImageProcessedMessage(
     @JsonProperty("productId")
     Long productId,
 
-    @JsonProperty("originalUrl")
+    @JsonProperty("originUrl")
     String originUrl,
 
     @JsonProperty("fileName")
     String originFileName,
 
     @JsonProperty("fileSize")
-    Long originFileSize,
-
-    @JsonProperty("thumbnails")
-    List<ProductThumbnailMessage> thumbnails
+    Long originFileSize
 ) {
 }

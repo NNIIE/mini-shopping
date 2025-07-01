@@ -110,15 +110,3 @@ CREATE TABLE product_image
 
     INDEX idx_product_image001 (product_id, file_name)
 );
-
-CREATE TABLE product_thumbnail
-(
-    id              BIGINT UNSIGNED AUTO_INCREMENT       PRIMARY KEY,
-    product_id      BIGINT UNSIGNED                      NOT NULL,
-    url             VARCHAR(500)                         NOT NULL,
-    size_type       VARCHAR(20)                          NOT NULL,
-    created_at      TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-    UNIQUE INDEX idx_product_thumbnail_001 (product_id, size_type)
-);

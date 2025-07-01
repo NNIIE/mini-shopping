@@ -1,16 +1,16 @@
 package com.admin.service;
 
 import com.admin.mq.ImageProcessedMessage;
-import com.admin.mq.ProductThumbnailMessage;
 import com.admin.web.request.image.UploadUrlRequest;
+import com.admin.web.response.image.PreSignedResponse;
 import com.relation.product.Product;
 import com.relation.productimage.ProductImage;
 import com.relation.productimage.ProductImageRepository;
-import com.relation.productthumbnail.ProductThumbnail;
-import com.relation.productthumbnail.ProductThumbnailRepository;
 import com.s3.service.S3UploadService;
+import com.support.dto.CreatePreSignedDto;
 import com.support.response.PreSignedUrlResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,24 +18,46 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ImageService {
 
+    @Value("${aws.s3.region}")
+    private String region;
+
+    @Value("${aws.s3.bucket.original}")
+    private String originBucket;
+
+    @Value("${aws.s3.bucket.thumbnail}")
+    private String thumbnailBucket;
+
+    private static final String PRODUCTS_FOLDER = "products/";
+    private static final String THUMBNAIL_SUFFIX = "_thumbnail";
+
     private final S3UploadService s3UploadService;
     private final ProductService productService;
     private final ProductImageRepository productImageRepository;
-    private final ProductThumbnailRepository productThumbnailRepository;
 
-    public PreSignedUrlResponse generateUploadUrl(final UploadUrlRequest request) {
-        return s3UploadService.generateUploadUrl(
-            request.getProductId(),
-            request.getFileName(),
-            request.getContentType()
+    public PreSignedResponse generateUploadUrl(final UploadUrlRequest request) {
+        final Long productId = request.getProductId();
+        final String contentType = request.getContentType();
+        final String baseFileName = request.getFileName();
+
+        final PreSignedUrlResponse originResponse = s3UploadService.generateUploadUrl(
+            new CreatePreSignedDto(productId, baseFileName, contentType, PRODUCTS_FOLDER, region, originBucket)
         );
+
+        if (!request.isIncludeThumbnail()) {
+            return PreSignedResponse.originOnly(originResponse);
+        }
+
+        final PreSignedUrlResponse thumbnailResponse = s3UploadService.generateUploadUrl(
+            new CreatePreSignedDto(productId, baseFileName + THUMBNAIL_SUFFIX, contentType, PRODUCTS_FOLDER, region, thumbnailBucket)
+        );
+
+        return PreSignedResponse.originAndThumbnail(originResponse, thumbnailResponse);
     }
 
     @Transactional
     public void saveImages(final ImageProcessedMessage message) {
         final Product product = productService.getProductById(message.productId());
         createProductImage(product, message);
-        createProductThumbnail(product, message);
     }
 
     private void createProductImage(final Product product, final ImageProcessedMessage message) {
@@ -47,18 +69,6 @@ public class ImageService {
             .build();
 
         productImageRepository.save(productImage);
-    }
-
-    private void createProductThumbnail(final Product product, final ImageProcessedMessage message) {
-        for (ProductThumbnailMessage thumbnail : message.thumbnails()) {
-            final ProductThumbnail productThumbnail = ProductThumbnail.builder()
-                .product(product)
-                .url(thumbnail.url())
-                .sizeType(thumbnail.size())
-                .build();
-
-            productThumbnailRepository.save(productThumbnail);
-        }
     }
 
 }

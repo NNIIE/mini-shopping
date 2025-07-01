@@ -3,8 +3,8 @@ package com.admin.web.controller;
 import com.admin.principal.CurrentAdmin;
 import com.admin.service.ImageService;
 import com.admin.web.request.image.UploadUrlRequest;
+import com.admin.web.response.image.PreSignedResponse;
 import com.relation.admin.Admin;
-import com.support.response.PreSignedUrlResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,11 +25,11 @@ public class ImageController {
 
     @PostMapping("/upload-url")
     @Operation(summary = "이미지 업로드 URL 발급")
-    public ResponseEntity<PreSignedUrlResponse> generateUploadUrl(
+    public ResponseEntity<PreSignedResponse> generateUploadUrl(
         @RequestBody @Valid final UploadUrlRequest request
 //        @CurrentAdmin final Admin admin
     ) {
-        final PreSignedUrlResponse response = imageService.generateUploadUrl(request);
+        final PreSignedResponse response = imageService.generateUploadUrl(request);
         return ResponseEntity.ok(response);
     }
 
