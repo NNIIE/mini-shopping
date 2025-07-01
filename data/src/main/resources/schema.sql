@@ -7,6 +7,8 @@ DROP TABLE IF EXISTS user;
 DROP TABLE IF EXISTS admin;
 DROP TABLE IF EXISTS account;
 DROP TABLE IF EXISTS token;
+DROP TABLE IF EXISTS product_image;
+DROP TABLE IF EXISTS product_thumbnail;
 
 CREATE TABLE account
 (
@@ -94,4 +96,17 @@ CREATE TABLE order_product
     quantity        INT UNSIGNED                         NOT NULL,
     created_at      TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE product_image
+(
+    id              BIGINT UNSIGNED AUTO_INCREMENT       PRIMARY KEY,
+    product_id      BIGINT UNSIGNED                      NOT NULL,
+    url             VARCHAR(500)                         NOT NULL,
+    file_name       VARCHAR(255)                         NOT NULL,
+    file_size       BIGINT UNSIGNED                      NOT NULL,
+    created_at      TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX idx_product_image001 (product_id, file_name)
 );

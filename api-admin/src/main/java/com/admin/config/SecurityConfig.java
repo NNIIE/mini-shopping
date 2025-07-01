@@ -52,7 +52,8 @@ public class SecurityConfig {
                 "/swagger-ui.html",
                 "/admin/actuator/health",
                 "/admin/signIn",
-                "/admin/signUp"
+                "/admin/signUp",
+                "/admin/image/**"   // test 단계
             ).permitAll()
             .requestMatchers("/admin/**").hasRole("ADMIN")
             .anyRequest().authenticated();
