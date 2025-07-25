@@ -1,0 +1,2 @@
+bootJar.enabled = false         // Spring Boot Jar 빌드 비활성화 - 독립적 실행 X
+jar.enabled = true              // Jar 빌드 활성화 - 다른 모듈에서 사용가능

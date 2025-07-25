@@ -28,15 +28,17 @@ jobs:
         with:
           filters: |
             api-user:
-              - 'api-user/**'
-              - 'data/**'
-              - 'support/**'
+              - 'backend/api-user/**'
+              - 'backend/data/**'
+              - 'backend/support/**'
+              - 'backend/file-storage/**'
               - 'build.gradle'
               - 'settings.gradle'
             api-admin:
-              - 'api-admin/**'
-              - 'data/**'
-              - 'support/**'
+              - 'backend/api-admin/**'
+              - 'backend/data/**'
+              - 'backend/support/**'
+              - 'backend/file-storage/**'
               - 'build.gradle'
               - 'settings.gradle'
 
@@ -59,7 +61,7 @@ jobs:
 
       # api-user 모듈만 빌드 - Jar 생성, 테스트 생략(CI 단계에서 테스트 수행)
       - name: Build api-user only
-        run: ./gradlew :api-user:bootJar -x test
+        run: ./gradlew :backend:api-user:bootJar -x test
 
       # AWS 인증 설정 (IAM 접근키, 시크릿키)
       - name: Configure AWS credentials
@@ -81,7 +83,7 @@ jobs:
           ECR_REPOSITORY: mini-shopping/api-user
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f api-user/Dockerfile .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f backend/api-user/Dockerfile .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
@@ -152,7 +154,7 @@ jobs:
 
       # api-admin 모듈만 빌드 - Jar 생성, 테스트 생략(CI 단계에서 테스트 수행)
       - name: Build api-admin only
-        run: ./gradlew :api-admin:bootJar -x test
+        run: ./gradlew :backend:api-admin:bootJar -x test
 
       # AWS 인증 설정 (IAM 접근키, 시크릿키)
       - name: Configure AWS credentials
@@ -174,7 +176,7 @@ jobs:
           ECR_REPOSITORY: mini-shopping/api-admin
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f api-admin/Dockerfile .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f backend/api-admin/Dockerfile .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
@@ -318,7 +320,7 @@ jobs:
       - name: Detect if data/support changed
         id: common_change
         run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -qE '^data/|^support/'; then
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -qE '^backend/data/|^backend/support/'; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT

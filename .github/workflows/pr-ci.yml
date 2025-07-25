@@ -22,15 +22,17 @@ jobs:
         with:
           filters: |
             api-user:
-              - 'api-user/**'
-              - 'data/**'
-              - 'support/**'
+              - 'backend/api-user/**'
+              - 'backend/data/**'
+              - 'backend/support/**'
+              - 'backend/file-storage/**'
               - 'build.gradle'
               - 'settings.gradle'
             api-admin:
-              - 'api-admin/**'
-              - 'data/**'
-              - 'support/**'
+              - 'backend/api-admin/**'
+              - 'backend/data/**'
+              - 'backend/support/**'
+              - 'backend/file-storage/**'
               - 'build.gradle'
               - 'settings.gradle'
 
@@ -53,7 +55,7 @@ jobs:
       - name: Build and Test api-user
         run: |
           chmod +x gradlew
-          ./gradlew :api-user:build
+          ./gradlew :backend:api-user:build
 
   # api-admin 빌드 및 테스트 (변경시에만)
   check-api-admin:
@@ -74,4 +76,4 @@ jobs:
       - name: Build and Test api-admin
         run: |
           chmod +x gradlew
-          ./gradlew :api-admin:build
+          ./gradlew :backend:api-admin:build

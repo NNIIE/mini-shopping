@@ -1,7 +1,7 @@
 rootProject.name = 'mini-shopping'
-include 'api-admin'
-include 'api-user'
-include 'data'
-include 'support'
-include 'file-storage'
+include 'backend:api-admin'
+include 'backend:api-user'
+include 'backend:data'
+include 'backend:support'
+include 'backend:file-storage'
 
