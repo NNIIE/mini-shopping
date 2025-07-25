@@ -1,0 +1,52 @@
+/* Global Styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-y: scroll;
+}
+
+body {
+  background-color: #f8f9fa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease;
+}
+
+.product-card:hover img {
+  transform: scale(1.02);
+  transition: transform 0.2s ease;
+}
+
+/* Cart and other pages styling */
+.cart-item-card {
+  border: 1px solid #e9ecef;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.cart-item-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Header hover effects */
+.navbar-brand:hover {
+  color: #2980b9 !important;
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: #2980b9 !important;
+  transition: color 0.2s ease;
+}
+
+/* Container styling */
+.container {
+  max-width: 1200px;
+}
