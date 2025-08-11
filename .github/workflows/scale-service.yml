@@ -1,538 +1,538 @@
-name: Scale ECS Service
-
-on:
-  workflow_dispatch:
-    inputs:
-      service:
-        description: '스케일링할 서비스 선택'
-        required: true
-        type: choice
-        options:
-          - api-user
-          - api-admin
-          - both
-      reason:
-        description: '스케일링/재시작 사유'
-        required: true
-        type: string
-      force_new_deployment:
-        description: '컨테이너 강제 재시작 (기본: true)'
-        required: false
-        type: boolean
-        default: true
-      desired_count:
-        description: '원하는 태스크 수 (비워두면 현재 설정 유지)'
-        required: false
-        type: string
-        default: ''
-
-permissions:
-  contents: write
-  issues: write
-
-env:
-  AWS_REGION: 'ap-northeast-2'
-
-jobs:
-  # 현재 상태 수집
-  collect-current-state:
-    name: Collect Current State
-    runs-on: ubuntu-latest
-    outputs:
-      user-current-tag: ${{ steps.get-versions.outputs.user-tag }}
-      user-current-digest: ${{ steps.get-versions.outputs.user-digest }}
-      user-current-count: ${{ steps.get-versions.outputs.user-count }}
-      admin-current-tag: ${{ steps.get-versions.outputs.admin-tag }}
-      admin-current-digest: ${{ steps.get-versions.outputs.admin-digest }}
-      admin-current-count: ${{ steps.get-versions.outputs.admin-count }}
-    steps:
-      # AWS 인증
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      # 현재 버전 정보 수집
-      - name: Get current versions
-        id: get-versions
-        run: |
-          echo "📊 현재 서비스 상태 확인 중..."
-          
-          # api-user 정보 수집
-          if [[ "${{ github.event.inputs.service }}" == "api-user" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
-            # 서비스 정보 가져오기
-            SERVICE_INFO=$(aws ecs describe-services \
-              --cluster mini-shopping-cluster \
-              --services api-user-service \
-              --query 'services[0]' \
-              --output json)
-          
-            # 태스크 정의 ARN
-            USER_TASK_DEF=$(echo $SERVICE_INFO | jq -r '.taskDefinition')
-          
-            # 현재 실행 중인 태스크 수
-            USER_RUNNING_COUNT=$(echo $SERVICE_INFO | jq -r '.runningCount')
-            USER_DESIRED_COUNT=$(echo $SERVICE_INFO | jq -r '.desiredCount')
-          
-            # 태스크 정의에서 이미지 정보 추출
-            USER_IMAGE=$(aws ecs describe-task-definition \
-              --task-definition $USER_TASK_DEF \
-              --query 'taskDefinition.containerDefinitions[0].image' \
-              --output text)
-          
-            USER_TAG=$(echo $USER_IMAGE | awk -F':' '{print $NF}')
-          
-            # ECR에서 다이제스트 정보 가져오기
-            USER_DIGEST=$(aws ecr describe-images \
-              --repository-name mini-shopping/api-user \
-              --image-ids imageTag=$USER_TAG \
-              --query 'imageDetails[0].imageDigest' \
-              --output text 2>/dev/null || echo "N/A")
-          
-            echo "user-tag=$USER_TAG" >> $GITHUB_OUTPUT
-            echo "user-digest=$USER_DIGEST" >> $GITHUB_OUTPUT
-            echo "user-count=$USER_DESIRED_COUNT" >> $GITHUB_OUTPUT
-          
-            echo "✅ api-user 현재 상태:"
-            echo "   - 버전: $USER_TAG"
-            echo "   - 실행 중: $USER_RUNNING_COUNT / 원하는 수: $USER_DESIRED_COUNT"
-          else
-            echo "user-tag=N/A" >> $GITHUB_OUTPUT
-            echo "user-digest=N/A" >> $GITHUB_OUTPUT
-            echo "user-count=N/A" >> $GITHUB_OUTPUT
-          fi
-          
-          # api-admin 정보 수집
-          if [[ "${{ github.event.inputs.service }}" == "api-admin" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
-            # 서비스 정보 가져오기
-            SERVICE_INFO=$(aws ecs describe-services \
-              --cluster mini-shopping-cluster \
-              --services api-admin-service \
-              --query 'services[0]' \
-              --output json)
-          
-            # 태스크 정의 ARN
-            ADMIN_TASK_DEF=$(echo $SERVICE_INFO | jq -r '.taskDefinition')
-          
-            # 현재 실행 중인 태스크 수
-            ADMIN_RUNNING_COUNT=$(echo $SERVICE_INFO | jq -r '.runningCount')
-            ADMIN_DESIRED_COUNT=$(echo $SERVICE_INFO | jq -r '.desiredCount')
-          
-            # 태스크 정의에서 이미지 정보 추출
-            ADMIN_IMAGE=$(aws ecs describe-task-definition \
-              --task-definition $ADMIN_TASK_DEF \
-              --query 'taskDefinition.containerDefinitions[0].image' \
-              --output text)
-          
-            ADMIN_TAG=$(echo $ADMIN_IMAGE | awk -F':' '{print $NF}')
-          
-            # ECR에서 다이제스트 정보 가져오기
-            ADMIN_DIGEST=$(aws ecr describe-images \
-              --repository-name mini-shopping/api-admin \
-              --image-ids imageTag=$ADMIN_TAG \
-              --query 'imageDetails[0].imageDigest' \
-              --output text 2>/dev/null || echo "N/A")
-          
-            echo "admin-tag=$ADMIN_TAG" >> $GITHUB_OUTPUT
-            echo "admin-digest=$ADMIN_DIGEST" >> $GITHUB_OUTPUT
-            echo "admin-count=$ADMIN_DESIRED_COUNT" >> $GITHUB_OUTPUT
-          
-            echo "✅ api-admin 현재 상태:"
-            echo "   - 버전: $ADMIN_TAG"
-            echo "   - 실행 중: $ADMIN_RUNNING_COUNT / 원하는 수: $ADMIN_DESIRED_COUNT"
-          else
-            echo "admin-tag=N/A" >> $GITHUB_OUTPUT
-            echo "admin-digest=N/A" >> $GITHUB_OUTPUT
-            echo "admin-count=N/A" >> $GITHUB_OUTPUT
-          fi
-
-  # 재배포 실행
-  redeploy:
-    name: Redeploy Services
-    needs: collect-current-state
-    runs-on: ubuntu-latest
-    outputs:
-      redeploy-success: ${{ steps.wait-deployment.outputs.success }}
-      user-redeployed: ${{ steps.execute-redeploy.outputs.user_redeployed }}
-      admin-redeployed: ${{ steps.execute-redeploy.outputs.admin_redeployed }}
-      user-new-count: ${{ steps.execute-redeploy.outputs.user_new_count }}
-      admin-new-count: ${{ steps.execute-redeploy.outputs.admin_new_count }}
-    steps:
-      # AWS 인증
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      # 재배포 추적 초기화
-      - name: Initialize redeploy tracking
-        id: track-redeploy
-        run: |
-          echo "user_redeployed=false" >> $GITHUB_OUTPUT
-          echo "admin_redeployed=false" >> $GITHUB_OUTPUT
-          echo "user_new_count=${{ needs.collect-current-state.outputs.user-current-count }}" >> $GITHUB_OUTPUT
-          echo "admin_new_count=${{ needs.collect-current-state.outputs.admin-current-count }}" >> $GITHUB_OUTPUT
-
-      # 재배포 실행
-      - name: Execute redeploy
-        id: execute-redeploy
-        run: |
-          echo "🔄 재배포 시작..."
-          
-          # 재배포 실행 함수
-          redeploy_service() {
-            local SERVICE_NAME=$1
-            local DESIRED_COUNT=$2
-          
-            echo "🚀 $SERVICE_NAME 재배포 중..."
-          
-            # 기본 업데이트 명령 구성
-            UPDATE_CMD="aws ecs update-service \
-              --cluster mini-shopping-cluster \
-              --service $SERVICE_NAME"
-          
-            # 강제 새 배포 옵션
-            if [[ "${{ github.event.inputs.force_new_deployment }}" == "true" ]]; then
-              UPDATE_CMD="$UPDATE_CMD --force-new-deployment"
-            fi
-          
-            # 원하는 태스크 수가 지정된 경우
-            if [[ ! -z "$DESIRED_COUNT" ]]; then
-              UPDATE_CMD="$UPDATE_CMD --desired-count $DESIRED_COUNT"
-              echo "   태스크 수 변경: $DESIRED_COUNT"
-            fi
-          
-            # 서비스 업데이트 실행
-            if eval $UPDATE_CMD > /dev/null 2>&1; then
-              echo "✅ $SERVICE_NAME 재배포 시작됨"
-              return 0
-            else
-              echo "❌ $SERVICE_NAME 재배포 실패"
-              return 1
-            fi
-          }
-          
-          # 재배포 상태를 저장할 변수
-          USER_REDEPLOYED="false"
-          ADMIN_REDEPLOYED="false"
-          USER_NEW_COUNT="${{ needs.collect-current-state.outputs.user-current-count }}"
-          ADMIN_NEW_COUNT="${{ needs.collect-current-state.outputs.admin-current-count }}"
-          
-          # api-user 재배포
-          if [[ "${{ github.event.inputs.service }}" == "api-user" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
-            # 원하는 태스크 수 결정
-            if [[ ! -z "${{ github.event.inputs.desired_count }}" ]]; then
-              USER_DESIRED_COUNT="${{ github.event.inputs.desired_count }}"
-              USER_NEW_COUNT="$USER_DESIRED_COUNT"
-            else
-              USER_DESIRED_COUNT=""
-            fi
-          
-            if redeploy_service "api-user-service" "$USER_DESIRED_COUNT"; then
-              USER_REDEPLOYED="true"
-            fi
-          fi
-          
-          # api-admin 재배포
-          if [[ "${{ github.event.inputs.service }}" == "api-admin" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
-            # 원하는 태스크 수 결정
-            if [[ ! -z "${{ github.event.inputs.desired_count }}" ]]; then
-              ADMIN_DESIRED_COUNT="${{ github.event.inputs.desired_count }}"
-              ADMIN_NEW_COUNT="$ADMIN_DESIRED_COUNT"
-            else
-              ADMIN_DESIRED_COUNT=""
-            fi
-          
-            if redeploy_service "api-admin-service" "$ADMIN_DESIRED_COUNT"; then
-              ADMIN_REDEPLOYED="true"
-            fi
-          fi
-          
-          # GitHub Actions outputs에 직접 저장
-          echo "user_redeployed=$USER_REDEPLOYED" >> $GITHUB_OUTPUT
-          echo "admin_redeployed=$ADMIN_REDEPLOYED" >> $GITHUB_OUTPUT
-          echo "user_new_count=$USER_NEW_COUNT" >> $GITHUB_OUTPUT
-          echo "admin_new_count=$ADMIN_NEW_COUNT" >> $GITHUB_OUTPUT
-
-      # 배포 완료 대기
-      - name: Wait for deployment
-        id: wait-deployment
-        run: |
-          echo "⏳ 재배포 완료 대기 중..."
-          
-          wait_for_service() {
-            local service=$1
-            local max_attempts=40
-            local attempt=0
-          
-            while [ $attempt -lt $max_attempts ]; do
-              # 서비스 상태 확인
-              SERVICE_STATE=$(aws ecs describe-services \
-                --cluster mini-shopping-cluster \
-                --services $service \
-                --query 'services[0]' \
-                --output json)
-          
-              # 배포 상태 확인
-              DEPLOYMENT_COUNT=$(echo $SERVICE_STATE | jq '.deployments | length')
-              PRIMARY_DEPLOYMENT=$(echo $SERVICE_STATE | jq -r '.deployments[] | select(.status == "PRIMARY")')
-          
-              # 배포가 하나만 있고 PRIMARY 상태면 완료
-              if [ "$DEPLOYMENT_COUNT" -eq 1 ] && [ ! -z "$PRIMARY_DEPLOYMENT" ]; then
-                RUNNING_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.runningCount')
-                DESIRED_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.desiredCount')
-          
-                if [ "$RUNNING_COUNT" -eq "$DESIRED_COUNT" ]; then
-                  echo "✅ $service 재배포 완료 (실행 중: $RUNNING_COUNT)"
-                  return 0
-                fi
-              fi
-          
-              echo "⏳ 대기 중... (배포: $DEPLOYMENT_COUNT개)"
-              sleep 15
-              ((attempt++))
-            done
-          
-            echo "❌ $service 재배포 시간 초과"
-            return 1
-          }
-          
-          SUCCESS="true"
-          
-          # 재배포된 서비스만 대기
-          if [[ "${{ steps.execute-redeploy.outputs.user_redeployed }}" == "true" ]]; then
-            wait_for_service "api-user-service" || SUCCESS="false"
-          fi
-          
-          if [[ "${{ steps.execute-redeploy.outputs.admin_redeployed }}" == "true" ]]; then
-            wait_for_service "api-admin-service" || SUCCESS="false"
-          fi
-          
-          echo "success=$SUCCESS" >> $GITHUB_OUTPUT
-
-  # 재배포 후 상태 수집
-  collect-post-state:
-    name: Collect Post-Deployment State
-    needs: redeploy
-    if: needs.redeploy.outputs.redeploy-success == 'true'
-    runs-on: ubuntu-latest
-    outputs:
-      user-final-tag: ${{ steps.get-final-versions.outputs.user-tag }}
-      user-final-count: ${{ steps.get-final-versions.outputs.user-count }}
-      user-running-count: ${{ steps.get-final-versions.outputs.user-running }}
-      admin-final-tag: ${{ steps.get-final-versions.outputs.admin-tag }}
-      admin-final-count: ${{ steps.get-final-versions.outputs.admin-count }}
-      admin-running-count: ${{ steps.get-final-versions.outputs.admin-running }}
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Get final versions
-        id: get-final-versions
-        run: |
-          echo "📊 재배포 후 최종 상태 확인 중..."
-          
-          # api-user 최종 상태
-          if [[ "${{ needs.redeploy.outputs.user-redeployed }}" == "true" ]]; then
-            SERVICE_INFO=$(aws ecs describe-services \
-              --cluster mini-shopping-cluster \
-              --services api-user-service \
-              --query 'services[0]' \
-              --output json)
-          
-            USER_TASK_DEF=$(echo $SERVICE_INFO | jq -r '.taskDefinition')
-            USER_DESIRED_COUNT=$(echo $SERVICE_INFO | jq -r '.desiredCount')
-            USER_RUNNING_COUNT=$(echo $SERVICE_INFO | jq -r '.runningCount')
-          
-            USER_IMAGE=$(aws ecs describe-task-definition \
-              --task-definition $USER_TASK_DEF \
-              --query 'taskDefinition.containerDefinitions[0].image' \
-              --output text)
-          
-            USER_TAG=$(echo $USER_IMAGE | awk -F':' '{print $NF}')
-          
-            echo "user-tag=$USER_TAG" >> $GITHUB_OUTPUT
-            echo "user-count=$USER_DESIRED_COUNT" >> $GITHUB_OUTPUT
-            echo "user-running=$USER_RUNNING_COUNT" >> $GITHUB_OUTPUT
-          else
-            echo "user-tag=N/A" >> $GITHUB_OUTPUT
-            echo "user-count=N/A" >> $GITHUB_OUTPUT
-            echo "user-running=N/A" >> $GITHUB_OUTPUT
-          fi
-          
-          # api-admin 최종 상태
-          if [[ "${{ needs.redeploy.outputs.admin-redeployed }}" == "true" ]]; then
-            SERVICE_INFO=$(aws ecs describe-services \
-              --cluster mini-shopping-cluster \
-              --services api-admin-service \
-              --query 'services[0]' \
-              --output json)
-          
-            ADMIN_TASK_DEF=$(echo $SERVICE_INFO | jq -r '.taskDefinition')
-            ADMIN_DESIRED_COUNT=$(echo $SERVICE_INFO | jq -r '.desiredCount')
-            ADMIN_RUNNING_COUNT=$(echo $SERVICE_INFO | jq -r '.runningCount')
-          
-            ADMIN_IMAGE=$(aws ecs describe-task-definition \
-              --task-definition $ADMIN_TASK_DEF \
-              --query 'taskDefinition.containerDefinitions[0].image' \
-              --output text)
-          
-            ADMIN_TAG=$(echo $ADMIN_IMAGE | awk -F':' '{print $NF}')
-          
-            echo "admin-tag=$ADMIN_TAG" >> $GITHUB_OUTPUT
-            echo "admin-count=$ADMIN_DESIRED_COUNT" >> $GITHUB_OUTPUT
-            echo "admin-running=$ADMIN_RUNNING_COUNT" >> $GITHUB_OUTPUT
-          else
-            echo "admin-tag=N/A" >> $GITHUB_OUTPUT
-            echo "admin-count=N/A" >> $GITHUB_OUTPUT
-            echo "admin-running=N/A" >> $GITHUB_OUTPUT
-          fi
-
-  # 릴리즈 노트 생성
-  create-release:
-    name: Create Redeploy Release
-    needs: [collect-current-state, redeploy, collect-post-state]
-    if: needs.redeploy.outputs.redeploy-success == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      # 현재 시간
-      - name: Get current date
-        id: date
-        run: |
-          echo "date=$(TZ=Asia/Seoul date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-          echo "datetime=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
-          echo "timestamp=$(TZ=Asia/Seoul date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
-
-      # 릴리즈 생성
-      - name: Create release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: redeploy-${{ steps.date.outputs.timestamp }}
-          name: Redeploy ${{ github.run_number }}
-          body: |
-            ## 🔄 재배포 완료
-            
-            ### 재배포 정보
-            - **재배포 시간:** ${{ steps.date.outputs.datetime }} (KST)
-            - **재배포 대상:** ${{ github.event.inputs.service }}
-            - **재배포 사유:** ${{ github.event.inputs.reason }}
-            - **강제 새 배포:** ${{ github.event.inputs.force_new_deployment }}
-            ${{ github.event.inputs.desired_count && format('- **요청된 태스크 수:** {0}', github.event.inputs.desired_count) || '' }}
-            
-            ### 재배포된 서비스
-            - **api-user:** ${{ needs.redeploy.outputs.user-redeployed == 'true' && '🔄 재배포됨' || '⏭️ 스킵' }}
-              - 버전: `${{ needs.collect-current-state.outputs.user-current-tag }}` (변경 없음)
-              - 태스크 수: ${{ needs.collect-current-state.outputs.user-current-count }} → ${{ needs.redeploy.outputs.user-new-count }}
-              - **실행 중인 태스크:** ${{ needs.collect-post-state.outputs.user-running-count }} / ${{ needs.collect-post-state.outputs.user-final-count }}
-              - Digest: `${{ needs.collect-current-state.outputs.user-current-digest }}`
-            
-            - **api-admin:** ${{ needs.redeploy.outputs.admin-redeployed == 'true' && '🔄 재배포됨' || '⏭️ 스킵' }}
-              - 버전: `${{ needs.collect-current-state.outputs.admin-current-tag }}` (변경 없음)
-              - 태스크 수: ${{ needs.collect-current-state.outputs.admin-current-count }} → ${{ needs.redeploy.outputs.admin-new-count }}
-              - **실행 중인 태스크:** ${{ needs.collect-post-state.outputs.admin-running-count }} / ${{ needs.collect-post-state.outputs.admin-final-count }}
-              - Digest: `${{ needs.collect-current-state.outputs.admin-current-digest }}`
-            
-            ### 실행 정보
-            - **실행자:** @${{ github.actor }}
-            - **배포 환경:** Production
-            - **Actions 링크:** [Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            
-            ---
-            
-            > ℹ️ **참고**: 이 릴리즈는 버전 변경 없이 재배포만 수행되었습니다.
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # 재배포 이슈 생성
-  create-issue:
-    name: Create Redeploy Issue
-    needs: [collect-current-state, redeploy, collect-post-state, create-release]
-    if: needs.redeploy.outputs.redeploy-success == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      # 현재 시간
-      - name: Get current date
-        id: date
-        run: |
-          echo "datetime=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
-
-      # 이슈 생성
-      - name: Create issue
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const issueTitle = `🔄 재배포 완료: ${context.payload.inputs.service} - ${new Date().toISOString().split('T')[0]}`;
-            
-            let redeployDetails = [];
-            
-            // 재배포된 서비스 정보
-            if ('${{ needs.redeploy.outputs.user-redeployed }}' === 'true') {
-              const taskCountChange = '${{ needs.collect-current-state.outputs.user-current-count }}' !== '${{ needs.redeploy.outputs.user-new-count }}' 
-                ? ` (태스크 수: ${{ needs.collect-current-state.outputs.user-current-count }} → ${{ needs.redeploy.outputs.user-new-count }})` 
-                : '';
-              redeployDetails.push(`- **api-user**: \`${{ needs.collect-current-state.outputs.user-current-tag }}\` (버전 변경 없음)${taskCountChange}`);
-            }
-            
-            if ('${{ needs.redeploy.outputs.admin-redeployed }}' === 'true') {
-              const taskCountChange = '${{ needs.collect-current-state.outputs.admin-current-count }}' !== '${{ needs.redeploy.outputs.admin-new-count }}' 
-                ? ` (태스크 수: ${{ needs.collect-current-state.outputs.admin-current-count }} → ${{ needs.redeploy.outputs.admin-new-count }})` 
-                : '';
-              redeployDetails.push(`- **api-admin**: \`${{ needs.collect-current-state.outputs.admin-current-tag }}\` (버전 변경 없음)${taskCountChange}`);
-            }
-            
-            const issueBody = `## 재배포 상세 정보
-            
-            ### 기본 정보
-            - **재배포 시간**: ${{ steps.date.outputs.datetime }} (KST)
-            - **재배포 실행자**: @${{ github.actor }}
-            - **재배포 대상**: ${{ github.event.inputs.service }}
-            - **재배포 사유**: ${{ github.event.inputs.reason }}
-            - **강제 새 배포**: ${{ github.event.inputs.force_new_deployment }}
-            ${context.payload.inputs.desired_count ? `- **요청된 태스크 수**: ${context.payload.inputs.desired_count}` : ''}
-            
-            ### 재배포된 서비스
-            ${redeployDetails.length > 0 ? redeployDetails.join('\n') : '- 재배포된 서비스 없음'}
-            
-            ### 관련 링크
-            - [Actions Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            - [릴리즈 노트](https://github.com/${{ github.repository }}/releases/latest)
-            
-            ### 체크리스트
-            - [ ] 서비스 정상 동작 확인
-            - [ ] 컨테이너 재시작 확인
-            - [ ] 로그 모니터링
-            - [ ] 성능 지표 확인
-            
-            ### 재배포 타입
-            - **버전 변경**: ❌ 없음
-            - **컨테이너 재시작**: ✅ 수행됨
-            - **설정 변경**: ${{ github.event.inputs.force_new_deployment == 'true' && '✅ 강제 새 배포' || '❌ 일반 재배포' }}
-            
-            ---
-            
-            > 이 이슈는 자동으로 생성되었습니다.
-            `;
-            
-            const issue = await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: issueTitle,
-              body: issueBody,
-              labels: ['redeploy', 'production', 'automated'],
-              assignees: ['${{ github.actor }}']
-            });
-            
-            console.log(`Issue created: ${issue.data.html_url}`);
+#name: Scale ECS Service
+#
+#on:
+#  workflow_dispatch:
+#    inputs:
+#      service:
+#        description: '스케일링할 서비스 선택'
+#        required: true
+#        type: choice
+#        options:
+#          - api-user
+#          - api-admin
+#          - both
+#      reason:
+#        description: '스케일링/재시작 사유'
+#        required: true
+#        type: string
+#      force_new_deployment:
+#        description: '컨테이너 강제 재시작 (기본: true)'
+#        required: false
+#        type: boolean
+#        default: true
+#      desired_count:
+#        description: '원하는 태스크 수 (비워두면 현재 설정 유지)'
+#        required: false
+#        type: string
+#        default: ''
+#
+#permissions:
+#  contents: write
+#  issues: write
+#
+#env:
+#  AWS_REGION: 'ap-northeast-2'
+#
+#jobs:
+#  # 현재 상태 수집
+#  collect-current-state:
+#    name: Collect Current State
+#    runs-on: ubuntu-latest
+#    outputs:
+#      user-current-tag: ${{ steps.get-versions.outputs.user-tag }}
+#      user-current-digest: ${{ steps.get-versions.outputs.user-digest }}
+#      user-current-count: ${{ steps.get-versions.outputs.user-count }}
+#      admin-current-tag: ${{ steps.get-versions.outputs.admin-tag }}
+#      admin-current-digest: ${{ steps.get-versions.outputs.admin-digest }}
+#      admin-current-count: ${{ steps.get-versions.outputs.admin-count }}
+#    steps:
+#      # AWS 인증
+#      - name: Configure AWS credentials
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          aws-region: ${{ env.AWS_REGION }}
+#
+#      # 현재 버전 정보 수집
+#      - name: Get current versions
+#        id: get-versions
+#        run: |
+#          echo "📊 현재 서비스 상태 확인 중..."
+#
+#          # api-user 정보 수집
+#          if [[ "${{ github.event.inputs.service }}" == "api-user" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
+#            # 서비스 정보 가져오기
+#            SERVICE_INFO=$(aws ecs describe-services \
+#              --cluster mini-shopping-cluster \
+#              --services api-user-service \
+#              --query 'services[0]' \
+#              --output json)
+#
+#            # 태스크 정의 ARN
+#            USER_TASK_DEF=$(echo $SERVICE_INFO | jq -r '.taskDefinition')
+#
+#            # 현재 실행 중인 태스크 수
+#            USER_RUNNING_COUNT=$(echo $SERVICE_INFO | jq -r '.runningCount')
+#            USER_DESIRED_COUNT=$(echo $SERVICE_INFO | jq -r '.desiredCount')
+#
+#            # 태스크 정의에서 이미지 정보 추출
+#            USER_IMAGE=$(aws ecs describe-task-definition \
+#              --task-definition $USER_TASK_DEF \
+#              --query 'taskDefinition.containerDefinitions[0].image' \
+#              --output text)
+#
+#            USER_TAG=$(echo $USER_IMAGE | awk -F':' '{print $NF}')
+#
+#            # ECR에서 다이제스트 정보 가져오기
+#            USER_DIGEST=$(aws ecr describe-images \
+#              --repository-name mini-shopping/api-user \
+#              --image-ids imageTag=$USER_TAG \
+#              --query 'imageDetails[0].imageDigest' \
+#              --output text 2>/dev/null || echo "N/A")
+#
+#            echo "user-tag=$USER_TAG" >> $GITHUB_OUTPUT
+#            echo "user-digest=$USER_DIGEST" >> $GITHUB_OUTPUT
+#            echo "user-count=$USER_DESIRED_COUNT" >> $GITHUB_OUTPUT
+#
+#            echo "✅ api-user 현재 상태:"
+#            echo "   - 버전: $USER_TAG"
+#            echo "   - 실행 중: $USER_RUNNING_COUNT / 원하는 수: $USER_DESIRED_COUNT"
+#          else
+#            echo "user-tag=N/A" >> $GITHUB_OUTPUT
+#            echo "user-digest=N/A" >> $GITHUB_OUTPUT
+#            echo "user-count=N/A" >> $GITHUB_OUTPUT
+#          fi
+#
+#          # api-admin 정보 수집
+#          if [[ "${{ github.event.inputs.service }}" == "api-admin" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
+#            # 서비스 정보 가져오기
+#            SERVICE_INFO=$(aws ecs describe-services \
+#              --cluster mini-shopping-cluster \
+#              --services api-admin-service \
+#              --query 'services[0]' \
+#              --output json)
+#
+#            # 태스크 정의 ARN
+#            ADMIN_TASK_DEF=$(echo $SERVICE_INFO | jq -r '.taskDefinition')
+#
+#            # 현재 실행 중인 태스크 수
+#            ADMIN_RUNNING_COUNT=$(echo $SERVICE_INFO | jq -r '.runningCount')
+#            ADMIN_DESIRED_COUNT=$(echo $SERVICE_INFO | jq -r '.desiredCount')
+#
+#            # 태스크 정의에서 이미지 정보 추출
+#            ADMIN_IMAGE=$(aws ecs describe-task-definition \
+#              --task-definition $ADMIN_TASK_DEF \
+#              --query 'taskDefinition.containerDefinitions[0].image' \
+#              --output text)
+#
+#            ADMIN_TAG=$(echo $ADMIN_IMAGE | awk -F':' '{print $NF}')
+#
+#            # ECR에서 다이제스트 정보 가져오기
+#            ADMIN_DIGEST=$(aws ecr describe-images \
+#              --repository-name mini-shopping/api-admin \
+#              --image-ids imageTag=$ADMIN_TAG \
+#              --query 'imageDetails[0].imageDigest' \
+#              --output text 2>/dev/null || echo "N/A")
+#
+#            echo "admin-tag=$ADMIN_TAG" >> $GITHUB_OUTPUT
+#            echo "admin-digest=$ADMIN_DIGEST" >> $GITHUB_OUTPUT
+#            echo "admin-count=$ADMIN_DESIRED_COUNT" >> $GITHUB_OUTPUT
+#
+#            echo "✅ api-admin 현재 상태:"
+#            echo "   - 버전: $ADMIN_TAG"
+#            echo "   - 실행 중: $ADMIN_RUNNING_COUNT / 원하는 수: $ADMIN_DESIRED_COUNT"
+#          else
+#            echo "admin-tag=N/A" >> $GITHUB_OUTPUT
+#            echo "admin-digest=N/A" >> $GITHUB_OUTPUT
+#            echo "admin-count=N/A" >> $GITHUB_OUTPUT
+#          fi
+#
+#  # 재배포 실행
+#  redeploy:
+#    name: Redeploy Services
+#    needs: collect-current-state
+#    runs-on: ubuntu-latest
+#    outputs:
+#      redeploy-success: ${{ steps.wait-deployment.outputs.success }}
+#      user-redeployed: ${{ steps.execute-redeploy.outputs.user_redeployed }}
+#      admin-redeployed: ${{ steps.execute-redeploy.outputs.admin_redeployed }}
+#      user-new-count: ${{ steps.execute-redeploy.outputs.user_new_count }}
+#      admin-new-count: ${{ steps.execute-redeploy.outputs.admin_new_count }}
+#    steps:
+#      # AWS 인증
+#      - name: Configure AWS credentials
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          aws-region: ${{ env.AWS_REGION }}
+#
+#      # 재배포 추적 초기화
+#      - name: Initialize redeploy tracking
+#        id: track-redeploy
+#        run: |
+#          echo "user_redeployed=false" >> $GITHUB_OUTPUT
+#          echo "admin_redeployed=false" >> $GITHUB_OUTPUT
+#          echo "user_new_count=${{ needs.collect-current-state.outputs.user-current-count }}" >> $GITHUB_OUTPUT
+#          echo "admin_new_count=${{ needs.collect-current-state.outputs.admin-current-count }}" >> $GITHUB_OUTPUT
+#
+#      # 재배포 실행
+#      - name: Execute redeploy
+#        id: execute-redeploy
+#        run: |
+#          echo "🔄 재배포 시작..."
+#
+#          # 재배포 실행 함수
+#          redeploy_service() {
+#            local SERVICE_NAME=$1
+#            local DESIRED_COUNT=$2
+#
+#            echo "🚀 $SERVICE_NAME 재배포 중..."
+#
+#            # 기본 업데이트 명령 구성
+#            UPDATE_CMD="aws ecs update-service \
+#              --cluster mini-shopping-cluster \
+#              --service $SERVICE_NAME"
+#
+#            # 강제 새 배포 옵션
+#            if [[ "${{ github.event.inputs.force_new_deployment }}" == "true" ]]; then
+#              UPDATE_CMD="$UPDATE_CMD --force-new-deployment"
+#            fi
+#
+#            # 원하는 태스크 수가 지정된 경우
+#            if [[ ! -z "$DESIRED_COUNT" ]]; then
+#              UPDATE_CMD="$UPDATE_CMD --desired-count $DESIRED_COUNT"
+#              echo "   태스크 수 변경: $DESIRED_COUNT"
+#            fi
+#
+#            # 서비스 업데이트 실행
+#            if eval $UPDATE_CMD > /dev/null 2>&1; then
+#              echo "✅ $SERVICE_NAME 재배포 시작됨"
+#              return 0
+#            else
+#              echo "❌ $SERVICE_NAME 재배포 실패"
+#              return 1
+#            fi
+#          }
+#
+#          # 재배포 상태를 저장할 변수
+#          USER_REDEPLOYED="false"
+#          ADMIN_REDEPLOYED="false"
+#          USER_NEW_COUNT="${{ needs.collect-current-state.outputs.user-current-count }}"
+#          ADMIN_NEW_COUNT="${{ needs.collect-current-state.outputs.admin-current-count }}"
+#
+#          # api-user 재배포
+#          if [[ "${{ github.event.inputs.service }}" == "api-user" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
+#            # 원하는 태스크 수 결정
+#            if [[ ! -z "${{ github.event.inputs.desired_count }}" ]]; then
+#              USER_DESIRED_COUNT="${{ github.event.inputs.desired_count }}"
+#              USER_NEW_COUNT="$USER_DESIRED_COUNT"
+#            else
+#              USER_DESIRED_COUNT=""
+#            fi
+#
+#            if redeploy_service "api-user-service" "$USER_DESIRED_COUNT"; then
+#              USER_REDEPLOYED="true"
+#            fi
+#          fi
+#
+#          # api-admin 재배포
+#          if [[ "${{ github.event.inputs.service }}" == "api-admin" ]] || [[ "${{ github.event.inputs.service }}" == "both" ]]; then
+#            # 원하는 태스크 수 결정
+#            if [[ ! -z "${{ github.event.inputs.desired_count }}" ]]; then
+#              ADMIN_DESIRED_COUNT="${{ github.event.inputs.desired_count }}"
+#              ADMIN_NEW_COUNT="$ADMIN_DESIRED_COUNT"
+#            else
+#              ADMIN_DESIRED_COUNT=""
+#            fi
+#
+#            if redeploy_service "api-admin-service" "$ADMIN_DESIRED_COUNT"; then
+#              ADMIN_REDEPLOYED="true"
+#            fi
+#          fi
+#
+#          # GitHub Actions outputs에 직접 저장
+#          echo "user_redeployed=$USER_REDEPLOYED" >> $GITHUB_OUTPUT
+#          echo "admin_redeployed=$ADMIN_REDEPLOYED" >> $GITHUB_OUTPUT
+#          echo "user_new_count=$USER_NEW_COUNT" >> $GITHUB_OUTPUT
+#          echo "admin_new_count=$ADMIN_NEW_COUNT" >> $GITHUB_OUTPUT
+#
+#      # 배포 완료 대기
+#      - name: Wait for deployment
+#        id: wait-deployment
+#        run: |
+#          echo "⏳ 재배포 완료 대기 중..."
+#
+#          wait_for_service() {
+#            local service=$1
+#            local max_attempts=40
+#            local attempt=0
+#
+#            while [ $attempt -lt $max_attempts ]; do
+#              # 서비스 상태 확인
+#              SERVICE_STATE=$(aws ecs describe-services \
+#                --cluster mini-shopping-cluster \
+#                --services $service \
+#                --query 'services[0]' \
+#                --output json)
+#
+#              # 배포 상태 확인
+#              DEPLOYMENT_COUNT=$(echo $SERVICE_STATE | jq '.deployments | length')
+#              PRIMARY_DEPLOYMENT=$(echo $SERVICE_STATE | jq -r '.deployments[] | select(.status == "PRIMARY")')
+#
+#              # 배포가 하나만 있고 PRIMARY 상태면 완료
+#              if [ "$DEPLOYMENT_COUNT" -eq 1 ] && [ ! -z "$PRIMARY_DEPLOYMENT" ]; then
+#                RUNNING_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.runningCount')
+#                DESIRED_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.desiredCount')
+#
+#                if [ "$RUNNING_COUNT" -eq "$DESIRED_COUNT" ]; then
+#                  echo "✅ $service 재배포 완료 (실행 중: $RUNNING_COUNT)"
+#                  return 0
+#                fi
+#              fi
+#
+#              echo "⏳ 대기 중... (배포: $DEPLOYMENT_COUNT개)"
+#              sleep 15
+#              ((attempt++))
+#            done
+#
+#            echo "❌ $service 재배포 시간 초과"
+#            return 1
+#          }
+#
+#          SUCCESS="true"
+#
+#          # 재배포된 서비스만 대기
+#          if [[ "${{ steps.execute-redeploy.outputs.user_redeployed }}" == "true" ]]; then
+#            wait_for_service "api-user-service" || SUCCESS="false"
+#          fi
+#
+#          if [[ "${{ steps.execute-redeploy.outputs.admin_redeployed }}" == "true" ]]; then
+#            wait_for_service "api-admin-service" || SUCCESS="false"
+#          fi
+#
+#          echo "success=$SUCCESS" >> $GITHUB_OUTPUT
+#
+#  # 재배포 후 상태 수집
+#  collect-post-state:
+#    name: Collect Post-Deployment State
+#    needs: redeploy
+#    if: needs.redeploy.outputs.redeploy-success == 'true'
+#    runs-on: ubuntu-latest
+#    outputs:
+#      user-final-tag: ${{ steps.get-final-versions.outputs.user-tag }}
+#      user-final-count: ${{ steps.get-final-versions.outputs.user-count }}
+#      user-running-count: ${{ steps.get-final-versions.outputs.user-running }}
+#      admin-final-tag: ${{ steps.get-final-versions.outputs.admin-tag }}
+#      admin-final-count: ${{ steps.get-final-versions.outputs.admin-count }}
+#      admin-running-count: ${{ steps.get-final-versions.outputs.admin-running }}
+#    steps:
+#      - name: Configure AWS credentials
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          aws-region: ${{ env.AWS_REGION }}
+#
+#      - name: Get final versions
+#        id: get-final-versions
+#        run: |
+#          echo "📊 재배포 후 최종 상태 확인 중..."
+#
+#          # api-user 최종 상태
+#          if [[ "${{ needs.redeploy.outputs.user-redeployed }}" == "true" ]]; then
+#            SERVICE_INFO=$(aws ecs describe-services \
+#              --cluster mini-shopping-cluster \
+#              --services api-user-service \
+#              --query 'services[0]' \
+#              --output json)
+#
+#            USER_TASK_DEF=$(echo $SERVICE_INFO | jq -r '.taskDefinition')
+#            USER_DESIRED_COUNT=$(echo $SERVICE_INFO | jq -r '.desiredCount')
+#            USER_RUNNING_COUNT=$(echo $SERVICE_INFO | jq -r '.runningCount')
+#
+#            USER_IMAGE=$(aws ecs describe-task-definition \
+#              --task-definition $USER_TASK_DEF \
+#              --query 'taskDefinition.containerDefinitions[0].image' \
+#              --output text)
+#
+#            USER_TAG=$(echo $USER_IMAGE | awk -F':' '{print $NF}')
+#
+#            echo "user-tag=$USER_TAG" >> $GITHUB_OUTPUT
+#            echo "user-count=$USER_DESIRED_COUNT" >> $GITHUB_OUTPUT
+#            echo "user-running=$USER_RUNNING_COUNT" >> $GITHUB_OUTPUT
+#          else
+#            echo "user-tag=N/A" >> $GITHUB_OUTPUT
+#            echo "user-count=N/A" >> $GITHUB_OUTPUT
+#            echo "user-running=N/A" >> $GITHUB_OUTPUT
+#          fi
+#
+#          # api-admin 최종 상태
+#          if [[ "${{ needs.redeploy.outputs.admin-redeployed }}" == "true" ]]; then
+#            SERVICE_INFO=$(aws ecs describe-services \
+#              --cluster mini-shopping-cluster \
+#              --services api-admin-service \
+#              --query 'services[0]' \
+#              --output json)
+#
+#            ADMIN_TASK_DEF=$(echo $SERVICE_INFO | jq -r '.taskDefinition')
+#            ADMIN_DESIRED_COUNT=$(echo $SERVICE_INFO | jq -r '.desiredCount')
+#            ADMIN_RUNNING_COUNT=$(echo $SERVICE_INFO | jq -r '.runningCount')
+#
+#            ADMIN_IMAGE=$(aws ecs describe-task-definition \
+#              --task-definition $ADMIN_TASK_DEF \
+#              --query 'taskDefinition.containerDefinitions[0].image' \
+#              --output text)
+#
+#            ADMIN_TAG=$(echo $ADMIN_IMAGE | awk -F':' '{print $NF}')
+#
+#            echo "admin-tag=$ADMIN_TAG" >> $GITHUB_OUTPUT
+#            echo "admin-count=$ADMIN_DESIRED_COUNT" >> $GITHUB_OUTPUT
+#            echo "admin-running=$ADMIN_RUNNING_COUNT" >> $GITHUB_OUTPUT
+#          else
+#            echo "admin-tag=N/A" >> $GITHUB_OUTPUT
+#            echo "admin-count=N/A" >> $GITHUB_OUTPUT
+#            echo "admin-running=N/A" >> $GITHUB_OUTPUT
+#          fi
+#
+#  # 릴리즈 노트 생성
+#  create-release:
+#    name: Create Redeploy Release
+#    needs: [collect-current-state, redeploy, collect-post-state]
+#    if: needs.redeploy.outputs.redeploy-success == 'true'
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      # 현재 시간
+#      - name: Get current date
+#        id: date
+#        run: |
+#          echo "date=$(TZ=Asia/Seoul date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+#          echo "datetime=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+#          echo "timestamp=$(TZ=Asia/Seoul date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+#
+#      # 릴리즈 생성
+#      - name: Create release
+#        uses: softprops/action-gh-release@v2
+#        with:
+#          tag_name: redeploy-${{ steps.date.outputs.timestamp }}
+#          name: Redeploy ${{ github.run_number }}
+#          body: |
+#            ## 🔄 재배포 완료
+#
+#            ### 재배포 정보
+#            - **재배포 시간:** ${{ steps.date.outputs.datetime }} (KST)
+#            - **재배포 대상:** ${{ github.event.inputs.service }}
+#            - **재배포 사유:** ${{ github.event.inputs.reason }}
+#            - **강제 새 배포:** ${{ github.event.inputs.force_new_deployment }}
+#            ${{ github.event.inputs.desired_count && format('- **요청된 태스크 수:** {0}', github.event.inputs.desired_count) || '' }}
+#
+#            ### 재배포된 서비스
+#            - **api-user:** ${{ needs.redeploy.outputs.user-redeployed == 'true' && '🔄 재배포됨' || '⏭️ 스킵' }}
+#              - 버전: `${{ needs.collect-current-state.outputs.user-current-tag }}` (변경 없음)
+#              - 태스크 수: ${{ needs.collect-current-state.outputs.user-current-count }} → ${{ needs.redeploy.outputs.user-new-count }}
+#              - **실행 중인 태스크:** ${{ needs.collect-post-state.outputs.user-running-count }} / ${{ needs.collect-post-state.outputs.user-final-count }}
+#              - Digest: `${{ needs.collect-current-state.outputs.user-current-digest }}`
+#
+#            - **api-admin:** ${{ needs.redeploy.outputs.admin-redeployed == 'true' && '🔄 재배포됨' || '⏭️ 스킵' }}
+#              - 버전: `${{ needs.collect-current-state.outputs.admin-current-tag }}` (변경 없음)
+#              - 태스크 수: ${{ needs.collect-current-state.outputs.admin-current-count }} → ${{ needs.redeploy.outputs.admin-new-count }}
+#              - **실행 중인 태스크:** ${{ needs.collect-post-state.outputs.admin-running-count }} / ${{ needs.collect-post-state.outputs.admin-final-count }}
+#              - Digest: `${{ needs.collect-current-state.outputs.admin-current-digest }}`
+#
+#            ### 실행 정보
+#            - **실행자:** @${{ github.actor }}
+#            - **배포 환경:** Production
+#            - **Actions 링크:** [Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+#
+#            ---
+#
+#            > ℹ️ **참고**: 이 릴리즈는 버전 변경 없이 재배포만 수행되었습니다.
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
+#  # 재배포 이슈 생성
+#  create-issue:
+#    name: Create Redeploy Issue
+#    needs: [collect-current-state, redeploy, collect-post-state, create-release]
+#    if: needs.redeploy.outputs.redeploy-success == 'true'
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      # 현재 시간
+#      - name: Get current date
+#        id: date
+#        run: |
+#          echo "datetime=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+#
+#      # 이슈 생성
+#      - name: Create issue
+#        uses: actions/github-script@v7
+#        with:
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          script: |
+#            const issueTitle = `🔄 재배포 완료: ${context.payload.inputs.service} - ${new Date().toISOString().split('T')[0]}`;
+#
+#            let redeployDetails = [];
+#
+#            // 재배포된 서비스 정보
+#            if ('${{ needs.redeploy.outputs.user-redeployed }}' === 'true') {
+#              const taskCountChange = '${{ needs.collect-current-state.outputs.user-current-count }}' !== '${{ needs.redeploy.outputs.user-new-count }}'
+#                ? ` (태스크 수: ${{ needs.collect-current-state.outputs.user-current-count }} → ${{ needs.redeploy.outputs.user-new-count }})`
+#                : '';
+#              redeployDetails.push(`- **api-user**: \`${{ needs.collect-current-state.outputs.user-current-tag }}\` (버전 변경 없음)${taskCountChange}`);
+#            }
+#
+#            if ('${{ needs.redeploy.outputs.admin-redeployed }}' === 'true') {
+#              const taskCountChange = '${{ needs.collect-current-state.outputs.admin-current-count }}' !== '${{ needs.redeploy.outputs.admin-new-count }}'
+#                ? ` (태스크 수: ${{ needs.collect-current-state.outputs.admin-current-count }} → ${{ needs.redeploy.outputs.admin-new-count }})`
+#                : '';
+#              redeployDetails.push(`- **api-admin**: \`${{ needs.collect-current-state.outputs.admin-current-tag }}\` (버전 변경 없음)${taskCountChange}`);
+#            }
+#
+#            const issueBody = `## 재배포 상세 정보
+#
+#            ### 기본 정보
+#            - **재배포 시간**: ${{ steps.date.outputs.datetime }} (KST)
+#            - **재배포 실행자**: @${{ github.actor }}
+#            - **재배포 대상**: ${{ github.event.inputs.service }}
+#            - **재배포 사유**: ${{ github.event.inputs.reason }}
+#            - **강제 새 배포**: ${{ github.event.inputs.force_new_deployment }}
+#            ${context.payload.inputs.desired_count ? `- **요청된 태스크 수**: ${context.payload.inputs.desired_count}` : ''}
+#
+#            ### 재배포된 서비스
+#            ${redeployDetails.length > 0 ? redeployDetails.join('\n') : '- 재배포된 서비스 없음'}
+#
+#            ### 관련 링크
+#            - [Actions Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+#            - [릴리즈 노트](https://github.com/${{ github.repository }}/releases/latest)
+#
+#            ### 체크리스트
+#            - [ ] 서비스 정상 동작 확인
+#            - [ ] 컨테이너 재시작 확인
+#            - [ ] 로그 모니터링
+#            - [ ] 성능 지표 확인
+#
+#            ### 재배포 타입
+#            - **버전 변경**: ❌ 없음
+#            - **컨테이너 재시작**: ✅ 수행됨
+#            - **설정 변경**: ${{ github.event.inputs.force_new_deployment == 'true' && '✅ 강제 새 배포' || '❌ 일반 재배포' }}
+#
+#            ---
+#
+#            > 이 이슈는 자동으로 생성되었습니다.
+#            `;
+#
+#            const issue = await github.rest.issues.create({
+#              owner: context.repo.owner,
+#              repo: context.repo.repo,
+#              title: issueTitle,
+#              body: issueBody,
+#              labels: ['redeploy', 'production', 'automated'],
+#              assignees: ['${{ github.actor }}']
+#            });
+#
+#            console.log(`Issue created: ${issue.data.html_url}`);
