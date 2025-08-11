@@ -149,7 +149,7 @@ const Header = () => {
                     fontWeight: '500'
                   }}>
                     <FaUserCircle size={18} className="me-2" />
-                    {user?.name || '사용자'}
+                    {user?.nickname || user?.email?.split('@')[0] || '사용자'}
                   </span>
                 } 
                 id="user-dropdown"

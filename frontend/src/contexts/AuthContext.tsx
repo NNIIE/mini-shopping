@@ -1,16 +1,19 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { useNotificationContext } from './NotificationContext';
+import apiClient from '../utils/api';
 
 interface User {
   id: string;
-  name: string;
   email: string;
+  nickname: string;
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
@@ -21,63 +24,61 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const { showSuccess, showInfo } = useNotificationContext();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      verifyToken(token);
+    const storedAccessToken = localStorage.getItem('accessToken');
+    const storedRefreshToken = localStorage.getItem('refreshToken');
+    const storedUser = localStorage.getItem('user');
+    
+    if (storedAccessToken && storedRefreshToken && storedUser) {
+      setAccessToken(storedAccessToken);
+      setRefreshToken(storedRefreshToken);
+      setUser(JSON.parse(storedUser));
+      setIsAuthenticated(true);
     }
   }, []);
 
-  const verifyToken = async (token: string) => {
-    try {
-      const response = await fetch('/api/auth/verify', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        setIsAuthenticated(true);
-        setUser(userData);
-      } else {
-        localStorage.removeItem('token');
-      }
-    } catch (error) {
-      localStorage.removeItem('token');
-    }
-  };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('token', data.token);
+      const data = await apiClient.post('/user/signIn', { email, password }, { skipAuth: true });
+        
+        // JWT 토큰 저장
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        setAccessToken(data.accessToken);
+        setRefreshToken(data.refreshToken);
+        
+        // JWT 디코딩하여 사용자 정보 추출
+        const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+        const userData = {
+          id: payload.sub || payload.id,
+          email: payload.email || email,
+          nickname: payload.nickname || payload.name || email.split('@')[0]
+        };
+        
+        localStorage.setItem('user', JSON.stringify(userData));
         setIsAuthenticated(true);
-        setUser(data.user);
+        setUser(userData);
         showSuccess('환영합니다!', '성공적으로 로그인되었습니다.');
         return true;
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '로그인에 실패했습니다.');
+    } catch (error: any) {
+      if (error.message === 'Failed to fetch') {
+        throw new Error('서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.');
       }
-    } catch (error) {
       throw error;
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    setAccessToken(null);
+    setRefreshToken(null);
     setIsAuthenticated(false);
     setUser(null);
     showInfo('로그아웃', '안전하게 로그아웃되었습니다.');
@@ -90,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, accessToken, refreshToken, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
